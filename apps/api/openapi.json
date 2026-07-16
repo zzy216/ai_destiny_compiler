@@ -1,0 +1,2914 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "使用邮箱或用户名登录",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "使用一次性邀请码注册",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "轮换 Refresh Token 并签发新会话凭据",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "撤销当前设备会话",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "修改密码并使既有会话失效",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "operationId": "ModelsController_listAvailable",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户可用于新会话的模型",
+        "tags": [
+          "Models"
+        ]
+      }
+    },
+    "/api/v1/custom-models": {
+      "get": {
+        "operationId": "CustomModelsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户自己的自定义模型",
+        "tags": [
+          "Custom Models"
+        ]
+      },
+      "post": {
+        "operationId": "CustomModelsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomModelRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建用户自定义 OpenAI-compatible 模型",
+        "tags": [
+          "Custom Models"
+        ]
+      }
+    },
+    "/api/v1/custom-models/{id}": {
+      "patch": {
+        "operationId": "CustomModelsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomModelRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建自定义模型的新草稿版本",
+        "tags": [
+          "Custom Models"
+        ]
+      },
+      "delete": {
+        "operationId": "CustomModelsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除自定义模型并立即清除其加密凭据",
+        "tags": [
+          "Custom Models"
+        ]
+      }
+    },
+    "/api/v1/custom-models/{id}/test": {
+      "post": {
+        "operationId": "CustomModelsController_testConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelConnectionTestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "测试自定义模型连接，不回显凭据或原始错误体",
+        "tags": [
+          "Custom Models"
+        ]
+      }
+    },
+    "/api/v1/admin/models": {
+      "get": {
+        "operationId": "AdminModelsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "管理员列出系统模型",
+        "tags": [
+          "Admin Models"
+        ]
+      },
+      "post": {
+        "operationId": "AdminModelsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminModelRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "管理员创建系统模型草稿",
+        "tags": [
+          "Admin Models"
+        ]
+      }
+    },
+    "/api/v1/admin/models/{id}": {
+      "get": {
+        "operationId": "AdminModelsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "管理员查看系统模型详情，不返回明文凭据",
+        "tags": [
+          "Admin Models"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminModelsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAdminModelRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "管理员创建或修改系统模型草稿版本",
+        "tags": [
+          "Admin Models"
+        ]
+      },
+      "delete": {
+        "operationId": "AdminModelsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除未发布且未被引用的草稿模型",
+        "tags": [
+          "Admin Models"
+        ]
+      }
+    },
+    "/api/v1/admin/models/{id}/publish": {
+      "post": {
+        "operationId": "AdminModelsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "发布模型当前草稿版本，仅影响新建会话",
+        "tags": [
+          "Admin Models"
+        ]
+      }
+    },
+    "/api/v1/admin/models/{id}/test": {
+      "post": {
+        "operationId": "AdminModelsController_testConnection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelConnectionTestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "管理员测试系统模型连接",
+        "tags": [
+          "Admin Models"
+        ]
+      }
+    },
+    "/api/v1/admin/models/{id}/set-default": {
+      "post": {
+        "operationId": "AdminModelsController_setDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "将已发布系统模型设为新会话默认模型",
+        "tags": [
+          "Admin Models"
+        ]
+      }
+    },
+    "/api/v1/conversations": {
+      "post": {
+        "description": "后续模型发布不会改写该会话保存的不含凭据模型快照。",
+        "operationId": "ConversationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建会话并固定当前模型发布版本",
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "get": {
+        "operationId": "ConversationsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户的会话",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/{id}/messages": {
+      "get": {
+        "operationId": "ConversationsController_listMessages",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "按序读取当前用户会话的消息",
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "post": {
+        "description": "事件类型固定为 run.started、message.delta、message.completed、run.failed。相同 idempotencyKey 不重复创建消息。",
+        "operationId": "ConversationsController_sendMessage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE 事件流，每个 data 字段为 JSON",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "example": "event: message.delta\\ndata: {\"agentRunId\":\"...\",\"delta\":\"先完成一个可验收动作\"}\\n\\n"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "发送消息并以 SSE 返回 Agent 执行事件",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Destiny Compiler API",
+    "description": "命运编译器 MVP 代码契约",
+    "version": "0.1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "LoginRequestDto": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "邮箱或用户名。错误响应不会暴露账号是否存在。",
+            "example": "user@example.com",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "deviceName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "iPhone 17"
+          }
+        },
+        "required": [
+          "identifier",
+          "password"
+        ]
+      },
+      "PublicUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "object",
+            "nullable": true,
+            "example": "user@example.com"
+          },
+          "username": {
+            "type": "object",
+            "nullable": true,
+            "example": "destiny_user"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "admin"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled",
+              "locked"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "status"
+        ]
+      },
+      "AuthSessionDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "短期 Access Token",
+            "writeOnly": true
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "轮换使用的 Refresh Token",
+            "writeOnly": true
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 900
+          },
+          "user": {
+            "$ref": "#/components/schemas/PublicUserDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresInSeconds",
+          "user"
+        ]
+      },
+      "AuthSessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AuthSessionDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ValidationErrorDetailDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string",
+            "example": "modelConfigId"
+          },
+          "message": {
+            "type": "string",
+            "example": "modelConfigId must be a UUID"
+          },
+          "code": {
+            "type": "string",
+            "example": "invalid_uuid"
+          }
+        },
+        "required": [
+          "field",
+          "message",
+          "code"
+        ]
+      },
+      "ApiErrorDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "validation_error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Request validation failed"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationErrorDetailDto"
+            }
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "ApiErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorDto"
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "RegisterRequestDto": {
+        "type": "object",
+        "properties": {
+          "invitationCode": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "maxLength": 254
+          },
+          "username": {
+            "type": "string",
+            "example": "destiny_user",
+            "minLength": 3,
+            "maxLength": 50
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "小明"
+          },
+          "deviceName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "iPhone 17"
+          }
+        },
+        "required": [
+          "invitationCode",
+          "password"
+        ]
+      },
+      "RefreshTokenRequestDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 32,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "LogoutRequestDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 32,
+            "maxLength": 2048
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "EmptyDataDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "EmptyResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EmptyDataDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ChangePasswordRequestDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 12,
+            "maxLength": 128
+          },
+          "newPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "minLength": 12,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ModelSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerType": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user"
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "example": "GPT 示例模型"
+          },
+          "modelType": {
+            "type": "string",
+            "enum": [
+              "api",
+              "local"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible",
+              "ollama",
+              "provider_specific"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "disabled",
+              "deleted"
+            ]
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isSelectable": {
+            "type": "boolean"
+          },
+          "hasCredential": {
+            "type": "boolean",
+            "description": "仅表示服务端已保存凭据，不返回凭据内容"
+          },
+          "secretHint": {
+            "type": "object",
+            "nullable": true,
+            "example": "…A1B2",
+            "description": "可选的脱敏末尾提示"
+          }
+        },
+        "required": [
+          "id",
+          "ownerType",
+          "displayName",
+          "modelType",
+          "protocol",
+          "status",
+          "isDefault",
+          "isSelectable",
+          "hasCredential"
+        ]
+      },
+      "PageMetaDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "example": 1,
+            "minimum": 1
+          },
+          "perPage": {
+            "type": "number",
+            "example": 20,
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "number",
+            "example": 42,
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 3,
+            "minimum": 0
+          }
+        },
+        "required": [
+          "page",
+          "perPage",
+          "total",
+          "totalPages"
+        ]
+      },
+      "ModelListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModelSummaryDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CreateCustomModelRequestDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "我的 API 模型"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible"
+            ],
+            "example": "openai_compatible"
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "example": "https://api.example.com/v1",
+            "description": "用户自定义模型首版只接受公网 HTTPS；SSRF 校验由 Service 再执行"
+          },
+          "modelName": {
+            "type": "string",
+            "maxLength": 120,
+            "example": "example-model"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "openai"
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 4096
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 60000,
+            "minimum": 1000,
+            "maximum": 300000
+          },
+          "maxOutputTokens": {
+            "type": "number",
+            "default": 4096,
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "supportsStream": {
+            "type": "boolean",
+            "default": true
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "required": [
+          "displayName",
+          "protocol",
+          "baseUrl",
+          "modelName"
+        ]
+      },
+      "ModelVersionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "number",
+            "minimum": 1,
+            "example": 3
+          },
+          "provider": {
+            "type": "object",
+            "nullable": true,
+            "example": "openai"
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://api.example.com/v1"
+          },
+          "modelName": {
+            "type": "string",
+            "example": "example-model"
+          },
+          "timeoutMs": {
+            "type": "number",
+            "minimum": 1000,
+            "maximum": 300000,
+            "example": 60000
+          },
+          "maxOutputTokens": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000,
+            "example": 4096
+          },
+          "supportsStream": {
+            "type": "boolean"
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean"
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "requestOptions": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "不含 api_key、authorization、token、secret 等敏感键"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "baseUrl",
+          "modelName",
+          "timeoutMs",
+          "maxOutputTokens",
+          "supportsStream",
+          "supportsStructuredOutput",
+          "capabilities",
+          "requestOptions"
+        ]
+      },
+      "ModelDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ownerType": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user"
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "example": "GPT 示例模型"
+          },
+          "modelType": {
+            "type": "string",
+            "enum": [
+              "api",
+              "local"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible",
+              "ollama",
+              "provider_specific"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "disabled",
+              "deleted"
+            ]
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isSelectable": {
+            "type": "boolean"
+          },
+          "hasCredential": {
+            "type": "boolean",
+            "description": "仅表示服务端已保存凭据，不返回凭据内容"
+          },
+          "secretHint": {
+            "type": "object",
+            "nullable": true,
+            "example": "…A1B2",
+            "description": "可选的脱敏末尾提示"
+          },
+          "currentVersion": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ModelVersionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "ownerType",
+          "displayName",
+          "modelType",
+          "protocol",
+          "status",
+          "isDefault",
+          "isSelectable",
+          "hasCredential"
+        ]
+      },
+      "ModelResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ModelDetailDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "UpdateCustomModelRequestDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "我的 API 模型"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible"
+            ],
+            "example": "openai_compatible"
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500,
+            "example": "https://api.example.com/v1",
+            "description": "用户自定义模型首版只接受公网 HTTPS；SSRF 校验由 Service 再执行"
+          },
+          "modelName": {
+            "type": "string",
+            "maxLength": 120,
+            "example": "example-model"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "openai"
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 4096
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 60000,
+            "minimum": 1000,
+            "maximum": 300000
+          },
+          "maxOutputTokens": {
+            "type": "number",
+            "default": 4096,
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "supportsStream": {
+            "type": "boolean",
+            "default": true
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "ModelConnectionTestDto": {
+        "type": "object",
+        "properties": {
+          "reachable": {
+            "type": "boolean",
+            "example": true
+          },
+          "latencyMs": {
+            "type": "number",
+            "example": 238
+          },
+          "errorCode": {
+            "type": "object",
+            "nullable": true,
+            "example": null
+          },
+          "errorMessage": {
+            "type": "object",
+            "nullable": true,
+            "description": "脱敏错误摘要，不包含供应商原始错误体或请求头"
+          }
+        },
+        "required": [
+          "reachable",
+          "latencyMs"
+        ]
+      },
+      "ModelConnectionTestResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ModelConnectionTestDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "CreateAdminModelRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "primary-model"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "主模型"
+          },
+          "modelType": {
+            "type": "string",
+            "enum": [
+              "api",
+              "local"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible",
+              "ollama",
+              "provider_specific"
+            ]
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "modelName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 4096
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 60000,
+            "minimum": 1000,
+            "maximum": 300000
+          },
+          "maxOutputTokens": {
+            "type": "number",
+            "default": 4096,
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "supportsStream": {
+            "type": "boolean",
+            "default": true
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean",
+            "default": true
+          },
+          "isSelectable": {
+            "type": "boolean",
+            "default": true
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "slug",
+          "displayName",
+          "modelType",
+          "protocol",
+          "baseUrl",
+          "modelName"
+        ]
+      },
+      "UpdateAdminModelRequestDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "maxLength": 80,
+            "example": "primary-model"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "主模型"
+          },
+          "modelType": {
+            "type": "string",
+            "enum": [
+              "api",
+              "local"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible",
+              "ollama",
+              "provider_specific"
+            ]
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "modelName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "apiKey": {
+            "type": "string",
+            "writeOnly": true,
+            "maxLength": 4096
+          },
+          "timeoutMs": {
+            "type": "number",
+            "default": 60000,
+            "minimum": 1000,
+            "maximum": 300000
+          },
+          "maxOutputTokens": {
+            "type": "number",
+            "default": 4096,
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "supportsStream": {
+            "type": "boolean",
+            "default": true
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean",
+            "default": true
+          },
+          "isSelectable": {
+            "type": "boolean",
+            "default": true
+          },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      },
+      "CreateConversationRequestDto": {
+        "type": "object",
+        "properties": {
+          "modelConfigId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "必须选择当前用户可用且已发布的模型稳定 ID"
+          },
+          "goalId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 150,
+            "example": "职业选择"
+          },
+          "inheritedSummary": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "从旧会话显式继承的脱敏摘要，不复制隐藏 Prompt 或凭据"
+          }
+        },
+        "required": [
+          "modelConfigId"
+        ]
+      },
+      "ModelSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "ownerType": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user"
+            ]
+          },
+          "modelType": {
+            "type": "string",
+            "enum": [
+              "api",
+              "local"
+            ]
+          },
+          "protocol": {
+            "type": "string",
+            "enum": [
+              "openai_compatible",
+              "ollama",
+              "provider_specific"
+            ]
+          },
+          "provider": {
+            "type": "object",
+            "nullable": true
+          },
+          "baseUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "modelName": {
+            "type": "string"
+          },
+          "version": {
+            "type": "number",
+            "minimum": 1
+          },
+          "supportsStream": {
+            "type": "boolean"
+          },
+          "supportsStructuredOutput": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "displayName",
+          "ownerType",
+          "modelType",
+          "protocol",
+          "baseUrl",
+          "modelName",
+          "version",
+          "supportsStream",
+          "supportsStructuredOutput"
+        ]
+      },
+      "ConversationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "goalId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "object",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived",
+              "model_unavailable"
+            ]
+          },
+          "modelSource": {
+            "type": "string",
+            "enum": [
+              "managed",
+              "custom"
+            ]
+          },
+          "modelConfigId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelConfigVersionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modelSnapshot": {
+            "$ref": "#/components/schemas/ModelSnapshotDto"
+          },
+          "lastMessageAt": {
+            "type": "object",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "modelSource",
+          "modelConfigId",
+          "modelConfigVersionId",
+          "modelSnapshot",
+          "createdAt"
+        ]
+      },
+      "ConversationResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ConversationDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ConversationListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "number",
+            "minimum": 1
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "contentJson": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "streaming",
+              "completed",
+              "failed"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "sequence",
+          "role",
+          "content",
+          "status",
+          "createdAt"
+        ]
+      },
+      "MessageListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "SendMessageRequestDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "idempotencyKey": {
+            "type": "string",
+            "format": "uuid",
+            "description": "客户端每次发送生成的 UUID；相同用户和键返回已有 Agent Run"
+          }
+        },
+        "required": [
+          "content",
+          "idempotencyKey"
+        ]
+      }
+    }
+  }
+}
