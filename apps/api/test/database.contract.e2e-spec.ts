@@ -8,7 +8,7 @@ describe('database contract', () => {
   it('uses PostgreSQL without synchronize and registers every core entity', () => {
     expect(databaseOptions.type).toBe('postgres');
     expect(databaseOptions.synchronize).toBe(false);
-    expect(databaseEntities).toHaveLength(19);
+    expect(databaseEntities).toHaveLength(17);
 
     const dataSource = new DataSource({
       ...databaseOptions,
@@ -16,7 +16,7 @@ describe('database contract', () => {
       migrations: databaseMigrations,
     });
 
-    expect(dataSource.options.entities).toHaveLength(19);
+    expect(dataSource.options.entities).toHaveLength(17);
     expect(dataSource.options.migrations).toHaveLength(20);
   });
 
