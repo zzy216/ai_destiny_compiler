@@ -5,10 +5,12 @@ import type { OpenAPIObject } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { ApiExceptionFilter } from './common/api-exception.filter';
+import { createRequestLogger } from './common/request-logger';
 import { createValidationException } from './common/validation';
 
 export function configureApplication(app: INestApplication): void {
   app.setGlobalPrefix('api');
+  app.use(createRequestLogger());
   app.use(helmet());
   app.useGlobalFilters(new ApiExceptionFilter());
   app.useGlobalPipes(

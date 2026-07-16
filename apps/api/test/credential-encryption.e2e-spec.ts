@@ -30,12 +30,20 @@ describe('model credential encryption', () => {
   it('rejects tampered ciphertext and invalid master keys', () => {
     const cipher = new ModelCredentialCipher(masterKey, 1);
     const encrypted = cipher.encrypt('secret');
-    encrypted.ciphertext[0] ^= 1;
+    encrypted.ciphertext[0] = (encrypted.ciphertext[0] ?? 0) ^ 1;
 
     expect(() => cipher.decrypt(encrypted)).toThrow(CredentialEncryptionError);
     expect(() => new ModelCredentialCipher(Buffer.alloc(16), 1)).toThrow(
       CredentialEncryptionError,
     );
+    expect(() => cipher.encrypt('')).toThrow(CredentialEncryptionError);
+    expect(() => new ModelCredentialCipher(masterKey, 0)).toThrow(
+      CredentialEncryptionError,
+    );
+
+    const invalidMetadata = cipher.encrypt('secret');
+    invalidMetadata.iv = Buffer.alloc(11);
+    expect(() => cipher.decrypt(invalidMetadata)).toThrow(CredentialEncryptionError);
   });
 
   it('loads a versioned base64 key from the environment and creates a safe hint', () => {
@@ -48,5 +56,20 @@ describe('model credential encryption', () => {
     expect(encrypted.keyVersion).toBe(9);
     expect(ModelCredentialCipher.createSecretHint('abcd-secret')).toBe('…cret');
     expect(ModelCredentialCipher.createSecretHint('')).toBeNull();
+  });
+
+  it('rejects missing or malformed environment keys', () => {
+    expect(() => createModelCredentialCipherFromEnv({})).toThrow(
+      CredentialEncryptionError,
+    );
+    expect(() =>
+      createModelCredentialCipherFromEnv({ MODEL_CREDENTIAL_MASTER_KEY: 'bad' }),
+    ).toThrow(CredentialEncryptionError);
+    expect(() =>
+      createModelCredentialCipherFromEnv({
+        MODEL_CREDENTIAL_MASTER_KEY: masterKey.toString('base64'),
+        MODEL_CREDENTIAL_KEY_VERSION: '0',
+      }),
+    ).toThrow(CredentialEncryptionError);
   });
 });

@@ -14,6 +14,7 @@ export interface ValidatedEnvironment {
     ssl: boolean;
     logging: boolean;
   };
+  modelCredentialKeyVersion: number;
 }
 
 export class EnvironmentValidationError extends Error {
@@ -53,6 +54,17 @@ function required(value: string | undefined, name: string, errors: string[]): st
   return value;
 }
 
+function validateBase64Key(value: string | undefined, name: string, errors: string[]): void {
+  if (!value) {
+    errors.push(`${name} is required`);
+    return;
+  }
+  const decoded = Buffer.from(value, 'base64');
+  if (decoded.length !== 32 || decoded.toString('base64') !== value) {
+    errors.push(`${name} must be a canonical base64-encoded 32-byte key`);
+  }
+}
+
 export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): ValidatedEnvironment {
   const errors: string[] = [];
   const nodeEnv = env.NODE_ENV ?? 'development';
@@ -80,6 +92,10 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): Valid
     ssl: parseBoolean(env.DB_SSL, 'DB_SSL', errors, false),
     logging: parseBoolean(env.DB_LOGGING, 'DB_LOGGING', errors, false),
   };
+  const modelCredentialKeyVersion = Number(env.MODEL_CREDENTIAL_KEY_VERSION ?? 1);
+  if (!Number.isInteger(modelCredentialKeyVersion) || modelCredentialKeyVersion < 1 || modelCredentialKeyVersion > 32767) {
+    errors.push('MODEL_CREDENTIAL_KEY_VERSION must be an integer between 1 and 32767');
+  }
 
   if (databaseEnabled) {
     required(database.host, 'DB_HOST', errors);
@@ -88,11 +104,12 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): Valid
     if (!database.password?.trim() || database.password === 'replace-me') {
       errors.push('DB_PASSWORD must be set to a non-placeholder value');
     }
+    validateBase64Key(env.MODEL_CREDENTIAL_MASTER_KEY, 'MODEL_CREDENTIAL_MASTER_KEY', errors);
   }
 
   if (errors.length > 0) {
     throw new EnvironmentValidationError(errors);
   }
 
-  return { nodeEnv: normalizedNodeEnv, port, databaseEnabled, database };
+  return { nodeEnv: normalizedNodeEnv, port, databaseEnabled, database, modelCredentialKeyVersion };
 }

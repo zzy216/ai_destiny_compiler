@@ -38,6 +38,47 @@ describe('foundation engineering', () => {
         }),
       ).toThrow(EnvironmentValidationError);
     });
+
+    it('accepts a complete production database configuration', () => {
+      expect(
+        validateEnvironment({
+          NODE_ENV: 'production',
+          PORT: '443',
+          DATABASE_ENABLED: 'true',
+          DB_HOST: 'db.internal',
+          DB_PORT: '5433',
+          DB_USERNAME: 'app',
+          DB_PASSWORD: 'provided-outside-the-repository',
+          DB_NAME: 'destiny',
+          DB_SCHEMA: 'app',
+          DB_SSL: 'true',
+          DB_LOGGING: 'false',
+          MODEL_CREDENTIAL_MASTER_KEY: Buffer.alloc(32, 9).toString('base64'),
+          MODEL_CREDENTIAL_KEY_VERSION: '4',
+        }),
+      ).toMatchObject({
+        nodeEnv: 'production',
+        port: 443,
+        databaseEnabled: true,
+        modelCredentialKeyVersion: 4,
+        database: { host: 'db.internal', port: 5433, ssl: true, logging: false },
+      });
+    });
+
+    it('reports malformed ports, booleans, environment and encryption key', () => {
+      expect(() =>
+        validateEnvironment({
+          NODE_ENV: 'staging',
+          PORT: '0',
+          DATABASE_ENABLED: 'sometimes',
+          DB_PORT: 'not-a-port',
+          DB_SSL: 'sometimes',
+          DB_LOGGING: 'sometimes',
+          MODEL_CREDENTIAL_MASTER_KEY: 'not-base64',
+          MODEL_CREDENTIAL_KEY_VERSION: '0',
+        }),
+      ).toThrow(EnvironmentValidationError);
+    });
   });
 
   describe('health check', () => {
