@@ -8,14 +8,15 @@ import {
   createOpenApiDocument,
   setupOpenApi,
 } from './bootstrap';
+import { validateEnvironment } from './config/environment';
 
 async function bootstrap(): Promise<void> {
+  const environment = validateEnvironment();
   const app = await NestFactory.create(AppModule);
   configureApplication(app);
   setupOpenApi(app, createOpenApiDocument(app));
 
-  const port = Number(process.env.PORT ?? 3000);
-  await app.listen(port);
+  await app.listen(environment.port);
 }
 
 void bootstrap();
