@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码提交工作流"
+  short_description: "Branch, commit, and merge each requirement safely"
+  default_prompt: "Use $code-submission-workflow to start this requirement from main, commit it, and merge it back."
