@@ -68,6 +68,7 @@ function createService() {
   };
   const models = { getPublishedModelRuntime: jest.fn(async () => runtime) } as unknown as ModelsService;
   const agentRuns = {
+    findByIdempotencyKey: jest.fn(async () => null),
     startRun: jest.fn(async () => ({ id: RUN_ID, status: 'running' })),
     succeedRun: jest.fn(async (_id: string, _userId: string, value: Record<string, unknown>) => ({ id: RUN_ID, ...value, status: 'succeeded' })),
     failRun: jest.fn(),
@@ -103,7 +104,7 @@ describe('ConversationsService', () => {
   });
 
   it('runs a message once, validates structured diagnosis, and persists an action card', async () => {
-    const { service, conversations, messages, actionCards, coaches, knowledgeCards, agentRuns, runtime } = createService();
+    const { service, conversations, messages, actionCards, coaches, knowledgeCards, agentRuns, models, runtime } = createService();
     conversations.findOne.mockResolvedValue({
       id: CONVERSATION_ID,
       userId: USER_ID,
@@ -142,6 +143,7 @@ describe('ConversationsService', () => {
       expect.objectContaining({ role: 'system' }),
       expect.objectContaining({ role: 'user', content: input.content }),
     ]));
+    expect(models.getPublishedModelRuntime).toHaveBeenCalledWith(MODEL_ID, USER_ID, MODEL_VERSION_ID);
     expect(actionCards.save).toHaveBeenCalledWith(expect.objectContaining({
       agentRunId: RUN_ID,
       userId: USER_ID,
@@ -160,24 +162,16 @@ describe('ConversationsService', () => {
   });
 
   it('reuses the existing run for a retried idempotency key', async () => {
-    const { service, conversations, messages, agentRuns } = createService();
+    const { service, conversations, agentRuns } = createService();
     conversations.findOne.mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID, status: 'active', modelConfigId: MODEL_ID });
-    messages.findOne.mockResolvedValue({
-      id: REQUEST_MESSAGE_ID,
-      conversationId: CONVERSATION_ID,
-      userId: USER_ID,
-      content: '已发送',
-      agentRunId: RUN_ID,
-      status: 'completed',
-    });
-    (agentRuns.startRun as jest.Mock).mockResolvedValue({ id: RUN_ID, status: 'succeeded', responseMessageId: '00000000-0000-4000-8000-000000000604' });
+    (agentRuns.findByIdempotencyKey as jest.Mock).mockResolvedValue({ id: RUN_ID, status: 'succeeded', responseMessageId: '00000000-0000-4000-8000-000000000604' });
 
     const result = await service.executeMessage(CONVERSATION_ID, {
       content: '已发送',
       idempotencyKey: '6c5d20e5-2b4c-4d1a-8a75-0e7cf31f9c4c',
     }, USER_ID);
 
-    expect(agentRuns.startRun).toHaveBeenCalledTimes(1);
+    expect(agentRuns.startRun).not.toHaveBeenCalled();
     expect(result.events[0]).toMatchObject({ event: 'run.started', data: { agentRunId: RUN_ID } });
   });
 
@@ -212,5 +206,70 @@ describe('ConversationsService', () => {
     const { service, conversations } = createService();
     await expect(service.executeMessage(CONVERSATION_ID, { content: ' ', idempotencyKey: 'bad' }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
     expect(conversations.findOne).not.toHaveBeenCalled();
+  });
+
+  it('lists conversations and messages with default and explicit pagination', async () => {
+    const { service, conversations, messages } = createService();
+    conversations.find.mockResolvedValue([{ id: CONVERSATION_ID }]);
+    conversations.count.mockResolvedValue(1);
+    messages.find.mockResolvedValue([{ id: REQUEST_MESSAGE_ID }]);
+    messages.count.mockResolvedValue(1);
+    conversations.findOne.mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID, status: 'active' });
+
+    await expect(service.listConversations({}, USER_ID)).resolves.toMatchObject({ meta: { page: 1, perPage: 20, total: 1 } });
+    await expect(service.listMessages(CONVERSATION_ID, { page: 2, perPage: 10 }, USER_ID)).resolves.toMatchObject({ meta: { page: 2, perPage: 10, totalPages: 1 } });
+    expect(conversations.find).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: 20 }));
+    expect(messages.find).toHaveBeenCalledWith(expect.objectContaining({ skip: 10, take: 10 }));
+  });
+
+  it('supports custom model snapshots and rejects invalid conversation metadata', async () => {
+    const { service, models, conversations } = createService();
+    (models.getPublishedModelRuntime as jest.Mock).mockResolvedValueOnce({
+      modelConfigId: MODEL_ID,
+      modelConfigVersionId: MODEL_VERSION_ID,
+      snapshot: { ownerType: 'user' },
+      complete: jest.fn(),
+    });
+    await expect(service.createConversation({ modelConfigId: MODEL_ID })).resolves.toMatchObject({ modelSource: 'custom' });
+    await expect(service.createConversation({ modelConfigId: 'bad' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.createConversation({ modelConfigId: MODEL_ID, title: 'x'.repeat(151) })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.createConversation({ modelConfigId: MODEL_ID, inheritedSummary: 'x'.repeat(4001) })).rejects.toBeInstanceOf(BadRequestException);
+    expect(conversations.save).toHaveBeenCalled();
+  });
+
+  it('rejects an archived conversation and a missing published coach', async () => {
+    const { service, conversations, coaches } = createService();
+    conversations.findOne.mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID, status: 'archived' });
+    await expect(service.executeMessage(CONVERSATION_ID, {
+      content: '无法发送',
+      idempotencyKey: '9c5d20e5-2b4c-4d1a-8a75-0e7cf31f9c4c',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+
+    conversations.findOne.mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID, status: 'active', modelConfigId: MODEL_ID });
+    coaches.findOne.mockResolvedValue(null);
+    await expect(service.executeMessage(CONVERSATION_ID, {
+      content: '没有教练',
+      idempotencyKey: 'ac5d20e5-2b4c-4d1a-8a75-0e7cf31f9c4c',
+    }, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('records safe model failures and exposes the same result through the stream generator', async () => {
+    const { service, conversations, messages, coaches, runtime, agentRuns } = createService();
+    conversations.findOne.mockResolvedValue({ id: CONVERSATION_ID, userId: USER_ID, status: 'active', modelConfigId: MODEL_ID, modelConfigVersionId: MODEL_VERSION_ID, modelSnapshot: runtime.snapshot });
+    messages.find.mockResolvedValue([]);
+    messages.findOne.mockResolvedValue(null);
+    coaches.findOne.mockResolvedValue({ id: COACH_ID, version: 1, status: 'published', systemPrompt: 'coach', outputSchema: {} });
+    (runtime.complete as jest.Mock).mockRejectedValue(new Error('provider secret should not leak'));
+
+    const events = [];
+    for await (const event of service.streamMessage(CONVERSATION_ID, {
+      content: '模型失败',
+      idempotencyKey: 'bc5d20e5-2b4c-4d1a-8a75-0e7cf31f9c4c',
+    }, USER_ID)) events.push(event);
+    expect(agentRuns.failRun).toHaveBeenCalledWith(RUN_ID, USER_ID, expect.objectContaining({
+      errorCode: 'MODEL_EXECUTION_FAILED',
+      errorMessage: 'Model execution failed',
+    }));
+    expect(events.at(-1)).toMatchObject({ event: 'run.failed' });
   });
 });

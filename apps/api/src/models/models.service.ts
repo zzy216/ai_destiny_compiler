@@ -380,6 +380,7 @@ export class ModelsService {
   async getPublishedModelRuntime(
     modelConfigId: string,
     userId = DEVELOPMENT_USER_ID,
+    modelConfigVersionId?: string,
   ): Promise<PublishedModelRuntime> {
     const repositories = this.repositories();
     const model = await repositories.configs.findOne({
@@ -391,12 +392,13 @@ export class ModelsService {
     if (!model || (model.ownerType === 'user' && model.ownerUserId !== userId)) {
       throw new NotFoundException('Published model not found');
     }
-    if (!model.publishedVersionId) throw new BadRequestException('Published model has no version');
+    const versionId = modelConfigVersionId ?? model.publishedVersionId;
+    if (!versionId) throw new BadRequestException('Published model has no version');
 
     const version = await repositories.versions.findOne({
-      where: { id: model.publishedVersionId, modelConfigId },
+      where: { id: versionId, modelConfigId },
     });
-    if (!version || version.versionStatus !== 'published') {
+    if (!version || (!modelConfigVersionId && version.versionStatus !== 'published')) {
       throw new NotFoundException('Published model version not found');
     }
 

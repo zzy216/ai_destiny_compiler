@@ -152,7 +152,11 @@ export class ConversationsService {
       };
     }
 
-    const runtime = await this.modelService().getPublishedModelRuntime(conversation.modelConfigId, userId);
+    const runtime = await this.modelService().getPublishedModelRuntime(
+      conversation.modelConfigId,
+      userId,
+      conversation.modelConfigVersionId,
+    );
     const coach = await this.coachRepository().findOne({ where: { status: 'published' }, order: { version: 'DESC' } });
     if (!coach) throw new NotFoundException('Published coach configuration not found');
     const cards = await this.matchKnowledgeCards(input.content);

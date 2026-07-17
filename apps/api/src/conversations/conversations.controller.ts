@@ -21,7 +21,6 @@ import {
 } from '@nestjs/swagger';
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
-import { contractNotImplemented } from '../common/contract-not-implemented';
 import { DEVELOPMENT_USER_ID } from '../models/models.service';
 import {
   ConversationListResponseDto,
@@ -86,7 +85,7 @@ export class ConversationsController {
     },
   })
   @ApiProtectedErrorResponses()
-  sendMessage(
+  async sendMessage(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() request: SendMessageRequestDto,
     @Res() response: Response,

@@ -181,4 +181,41 @@ describe('ModelsService connection tests', () => {
       InternalServerErrorException,
     );
   });
+
+  it('returns a credential-free runtime and can execute a pinned superseded version', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ choices: [{ message: { content: 'diagnosis' } }] }), { status: 200 }),
+    );
+    const customModel = {
+      ...model,
+      ownerType: 'user',
+      ownerUserId: '00000000-0000-4000-8000-000000000002',
+      status: 'published',
+      isSelectable: true,
+      displayName: '用户模型',
+      modelType: 'api',
+    } as ModelConfig;
+    const pinnedVersion = {
+      ...draftVersion,
+      id: '9cdbbfa1-7674-4b53-a2d9-a38af20aa1b0',
+      version: 1,
+      versionStatus: 'superseded',
+      provider: 'custom',
+      supportsStream: true,
+      supportsStructuredOutput: true,
+    } as ModelConfigVersion;
+    const configs = repository(customModel);
+    const versions = repository(pinnedVersion);
+    const credentials = repository<ModelCredential>(null);
+    const service = new ModelsService(configs, versions, credentials, cipher);
+
+    const runtime = await service.getPublishedModelRuntime(customModel.id, customModel.ownerUserId as string, pinnedVersion.id);
+    expect(runtime.snapshot).toMatchObject({ ownerType: 'user', modelName: pinnedVersion.modelName, version: 1 });
+    expect(JSON.stringify(runtime.snapshot)).not.toContain('apiKey');
+    await expect(runtime.complete([{ role: 'user', content: 'hello' }])).resolves.toMatchObject({ content: 'diagnosis' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ headers: { 'content-type': 'application/json' } }),
+    );
+  });
 });

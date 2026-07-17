@@ -286,21 +286,6 @@ describe('MVP API contract', () => {
         method: 'post',
         path: `/api/v1/admin/models/${resourceId}/set-default`,
       },
-      {
-        method: 'post',
-        path: '/api/v1/conversations',
-        body: { modelConfigId: resourceId, title: '职业选择' },
-      },
-      { method: 'get', path: '/api/v1/conversations?page=1&perPage=20' },
-      {
-        method: 'get',
-        path: `/api/v1/conversations/${resourceId}/messages?page=1&perPage=20`,
-      },
-      {
-        method: 'post',
-        path: `/api/v1/conversations/${resourceId}/messages`,
-        body: { content: '我应该先做什么？', idempotencyKey },
-      },
     ];
 
     for (const call of calls) {

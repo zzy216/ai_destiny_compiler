@@ -1,7 +1,7 @@
 # 实现阶段 3 Agent 核心闭环
 
 - 日期：2026-07-17
-- 状态：分析中
+- 状态：已完成
 - 需求来源：用户请求“执行下一步计划”，承接《MVP 执行清单》阶段 3
 
 ## 一、需求说明
@@ -93,12 +93,16 @@
 
 ### 已完成改动
 
-待实施。
+新增 `ConversationsService`，完成会话创建/列表、消息列表、幂等消息执行、教练与知识卡匹配、结构化诊断校验、行动卡和 Agent Run 持久化；Controller 已接入固定测试用户和 SSE 输出。`ModelsService` 新增运行时读取能力，并在执行阶段按会话绑定版本读取模型。同步更新测试发现规则、旧契约占位测试、MVP 清单和 TDD 证据。
 
 ### 验证结果
 
-- 待实施。
+- `pnpm test -- --runInBand` — 通过，12 个测试套件、77 个测试。
+- `pnpm typecheck` — 通过。
+- `pnpm build` — 通过。
+- `pnpm test:coverage` — 通过，分支覆盖率 80.70%。
+- `NODE_ENV=test DATABASE_ENABLED=false pnpm generate:openapi` — 通过。
 
 ### 限制和后续工作
 
-- 真实认证上下文、供应商 token 级流式适配和行动反馈留待后续阶段。
+- 真实认证上下文、供应商 token 级流式适配、真实 PostgreSQL 并发幂等和行动反馈留待后续阶段。
