@@ -20,7 +20,6 @@ import {
 } from '@nestjs/swagger';
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
-import { contractNotImplemented } from '../common/contract-not-implemented';
 import {
   CreateAdminModelRequestDto,
   CreateCustomModelRequestDto,
@@ -31,18 +30,24 @@ import {
   UpdateAdminModelRequestDto,
   UpdateCustomModelRequestDto,
 } from './models.dto';
-import { ModelsService } from './models.service';
+import {
+  DEVELOPMENT_ADMIN_ID,
+  DEVELOPMENT_USER_ID,
+  ModelsService,
+} from './models.service';
 
 @ApiTags('Models')
 @ApiBearerAuth('bearer')
 @Controller('v1/models')
 export class ModelsController {
+  constructor(private readonly modelsService: ModelsService) {}
+
   @Get()
   @ApiOperation({ summary: '列出当前用户可用于新会话的模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
   @ApiProtectedErrorResponses()
-  listAvailable(@Query() _query: PaginationQueryDto): never {
-    return contractNotImplemented();
+  list(@Query() query: PaginationQueryDto): Promise<ModelListResponseDto> {
+    return this.modelsService.listAvailableModels(query, DEVELOPMENT_USER_ID);
   }
 }
 
@@ -56,27 +61,49 @@ export class CustomModelsController {
   @ApiOperation({ summary: '列出当前用户自己的自定义模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
   @ApiProtectedErrorResponses()
-  list(@Query() _query: PaginationQueryDto): never {
-    return contractNotImplemented();
+  list(@Query() query: PaginationQueryDto): Promise<ModelListResponseDto> {
+    return this.modelsService.listCustomModels(query, DEVELOPMENT_USER_ID);
   }
 
   @Post()
   @ApiOperation({ summary: '创建用户自定义 OpenAI-compatible 模型' })
   @ApiCreatedResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  create(@Body() _request: CreateCustomModelRequestDto): never {
-    return contractNotImplemented();
+  async create(@Body() request: CreateCustomModelRequestDto): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.createCustomModel(request, DEVELOPMENT_USER_ID) };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '创建自定义模型的新草稿版本' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  update(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-    @Body() _request: UpdateCustomModelRequestDto,
-  ): never {
-    return contractNotImplemented();
+  async update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() request: UpdateCustomModelRequestDto,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.updateCustomModel(id, request, DEVELOPMENT_USER_ID) };
+  }
+
+  @Post(':id/publish')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '发布自定义模型当前草稿版本' })
+  @ApiOkResponse({ type: ModelResponseDto })
+  @ApiProtectedErrorResponses()
+  async publish(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.publishModel(id, DEVELOPMENT_USER_ID, 'user') };
+  }
+
+  @Post(':id/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '停用自定义模型' })
+  @ApiOkResponse({ type: ModelResponseDto })
+  @ApiProtectedErrorResponses()
+  async disable(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.disableCustomModel(id, DEVELOPMENT_USER_ID) };
   }
 
   @Delete(':id')
@@ -84,10 +111,10 @@ export class CustomModelsController {
   @ApiOperation({ summary: '删除自定义模型并立即清除其加密凭据' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  remove(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.deleteCustomModel(id, DEVELOPMENT_USER_ID) };
   }
 
   @Post(':id/test')
@@ -112,37 +139,37 @@ export class AdminModelsController {
   @ApiOperation({ summary: '管理员列出系统模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
   @ApiProtectedErrorResponses()
-  list(@Query() _query: PaginationQueryDto): never {
-    return contractNotImplemented();
+  list(@Query() query: PaginationQueryDto): Promise<ModelListResponseDto> {
+    return this.modelsService.listAdminModels(query);
   }
 
   @Post()
   @ApiOperation({ summary: '管理员创建系统模型草稿' })
   @ApiCreatedResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  create(@Body() _request: CreateAdminModelRequestDto): never {
-    return contractNotImplemented();
+  async create(@Body() request: CreateAdminModelRequestDto): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.createAdminModel(request, DEVELOPMENT_ADMIN_ID) };
   }
 
   @Get(':id')
   @ApiOperation({ summary: '管理员查看系统模型详情，不返回明文凭据' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  get(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async get(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.getAdminModel(id) };
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '管理员创建或修改系统模型草稿版本' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  update(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-    @Body() _request: UpdateAdminModelRequestDto,
-  ): never {
-    return contractNotImplemented();
+  async update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() request: UpdateAdminModelRequestDto,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.updateAdminModel(id, request, DEVELOPMENT_ADMIN_ID) };
   }
 
   @Delete(':id')
@@ -150,10 +177,10 @@ export class AdminModelsController {
   @ApiOperation({ summary: '删除未发布且未被引用的草稿模型' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  remove(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.deleteAdminModel(id, DEVELOPMENT_ADMIN_ID) };
   }
 
   @Post(':id/publish')
@@ -161,10 +188,21 @@ export class AdminModelsController {
   @ApiOperation({ summary: '发布模型当前草稿版本，仅影响新建会话' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  publish(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async publish(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.publishModel(id, DEVELOPMENT_ADMIN_ID) };
+  }
+
+  @Post(':id/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '停用系统模型，不影响历史会话' })
+  @ApiOkResponse({ type: ModelResponseDto })
+  @ApiProtectedErrorResponses()
+  async disable(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.disableModel(id, DEVELOPMENT_ADMIN_ID, 'system') };
   }
 
   @Post(':id/test')
@@ -183,9 +221,9 @@ export class AdminModelsController {
   @ApiOperation({ summary: '将已发布系统模型设为新会话默认模型' })
   @ApiOkResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  setDefault(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async setDefault(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.setDefaultModel(id, DEVELOPMENT_ADMIN_ID) };
   }
 }

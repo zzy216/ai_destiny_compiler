@@ -4,6 +4,7 @@ import request = require('supertest');
 
 import { AppModule } from '../src/app.module';
 import { configureApplication } from '../src/bootstrap';
+import { HealthController } from '../src/health/health.controller';
 import {
   EnvironmentValidationError,
   validateEnvironment,
@@ -110,6 +111,18 @@ describe('foundation engineering', () => {
         },
       });
       expect(response.body.data.timestamp).toEqual(expect.any(String));
+    });
+
+    it('reports database up and degraded states', async () => {
+      const upController = new HealthController({
+        query: jest.fn().mockResolvedValue([]),
+      } as never);
+      await expect(upController.check()).resolves.toMatchObject({ data: { status: 'ok', database: 'up' } });
+
+      const downController = new HealthController({
+        query: jest.fn().mockRejectedValue(new Error('database unavailable')),
+      } as never);
+      await expect(downController.check()).resolves.toMatchObject({ data: { status: 'degraded', database: 'down' } });
     });
   });
 });

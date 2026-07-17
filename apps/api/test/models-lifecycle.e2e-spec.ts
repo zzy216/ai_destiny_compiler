@@ -1,5 +1,5 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { ObjectLiteral, Repository } from 'typeorm';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import type { DataSource, ObjectLiteral, Repository } from 'typeorm';
 
 import {
   ModelConfig,
@@ -63,7 +63,13 @@ describe('ModelsService model lifecycle', () => {
     const service = createService({
       config: { save: configSave, findOne: jest.fn().mockResolvedValue(null) },
       versions: { save: versionSave, findOne: jest.fn().mockResolvedValue(null) },
-      credentials: { save: credentialSave },
+      credentials: {
+        save: credentialSave,
+        findOne: jest.fn().mockResolvedValue({
+          modelConfigId: MODEL_ID,
+          secretHint: '…-key',
+        } as ModelCredential),
+      },
     });
 
     const result = await service.createAdminModel(
@@ -267,7 +273,7 @@ describe('ModelsService model lifecycle', () => {
     expect(configSave).not.toHaveBeenCalled();
 
     const invalidDefaultService = createService({
-      config: { findOne: jest.fn().mockResolvedValue({ ownerType: 'user', status: 'published' } as ModelConfig) },
+      config: { findOne: jest.fn().mockResolvedValue({ ownerType: 'system', status: 'published' } as ModelConfig) },
     });
     await expect(invalidDefaultService.setDefaultModel(MODEL_ID, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
   });
@@ -289,9 +295,281 @@ describe('ModelsService model lifecycle', () => {
 
   it('returns not found when a custom model is not owned by the caller', async () => {
     const service = createService({
-      config: { findOne: jest.fn().mockResolvedValue({ id: MODEL_ID, ownerType: 'user', ownerUserId: ADMIN_ID } as ModelConfig) },
+      config: {
+        findOne: jest.fn().mockResolvedValue({
+          id: MODEL_ID,
+          ownerType: 'user',
+          ownerUserId: ADMIN_ID,
+        } as ModelConfig),
+      },
     });
 
     await expect(service.deleteCustomModel(MODEL_ID, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('lists custom and admin models with empty-page metadata', async () => {
+    const find = jest.fn().mockResolvedValue([]);
+    const count = jest.fn().mockResolvedValue(0);
+    const service = createService({
+      config: { find, count },
+      credentials: { find: jest.fn().mockResolvedValue([]) },
+    });
+
+    await expect(service.listCustomModels({ page: 2, perPage: 10 }, USER_ID)).resolves.toMatchObject({
+      data: [],
+      meta: { page: 2, perPage: 10, total: 0, totalPages: 0 },
+    });
+    await expect(service.listAdminModels()).resolves.toMatchObject({ data: [], meta: { page: 1, perPage: 20 } });
+    expect(find).toHaveBeenCalled();
+    expect(count).toHaveBeenCalled();
+  });
+
+  it('creates a custom model and can publish it for the owner', async () => {
+    const configUpdate = jest.fn();
+    const credentialSave = jest.fn();
+    const credentialFindOne = jest.fn().mockResolvedValue({ modelConfigId: MODEL_ID, secretHint: '…-key' } as ModelCredential);
+    const service = createService({
+      config: { save: jest.fn(async (value) => value), update: configUpdate, findOne: jest.fn().mockResolvedValue(null) },
+      versions: { save: jest.fn(async (value) => value), findOne: jest.fn().mockResolvedValue(null), update: jest.fn() },
+      credentials: { save: credentialSave, findOne: credentialFindOne },
+    });
+
+    const created = await service.createCustomModel({
+      displayName: '我的模型',
+      protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com/v1',
+      modelName: 'example-model',
+      apiKey: 'custom-api-key',
+    }, USER_ID);
+    expect(created).toMatchObject({ ownerType: 'user', status: 'draft', hasCredential: true });
+    expect(credentialSave).toHaveBeenCalledWith(expect.objectContaining({ updatedBy: USER_ID }));
+
+    const model = {
+      id: MODEL_ID,
+      ownerType: 'user',
+      ownerUserId: USER_ID,
+      status: 'draft',
+      isSelectable: false,
+      isDefault: false,
+      currentDraftVersionId: DRAFT_ID,
+      publishedVersionId: null,
+    } as ModelConfig;
+    const draft = { id: DRAFT_ID, modelConfigId: MODEL_ID, version: 1, versionStatus: 'draft', baseUrl: 'https://api.example.com/v1', modelName: 'example-model' } as ModelConfigVersion;
+    const publishService = createService({
+      config: { findOne: jest.fn().mockResolvedValue(model), update: configUpdate },
+      versions: { findOne: jest.fn().mockResolvedValue(draft), update: jest.fn() },
+      credentials: { findOne: credentialFindOne },
+    });
+    await expect(publishService.publishModel(MODEL_ID, USER_ID, 'user')).resolves.toMatchObject({ status: 'published', isSelectable: true });
+  });
+
+  it('disables custom models and deletes unpublished admin drafts', async () => {
+    const configUpdate = jest.fn();
+    const credentialDelete = jest.fn();
+    const customService = createService({
+      config: { findOne: jest.fn().mockResolvedValue({ id: MODEL_ID, ownerType: 'user', ownerUserId: USER_ID, status: 'published', isSelectable: true, isDefault: false } as ModelConfig), update: configUpdate },
+      credentials: { delete: credentialDelete, findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(customService.disableCustomModel(MODEL_ID, USER_ID)).resolves.toMatchObject({ status: 'disabled', isSelectable: false });
+
+    const adminService = createService({
+      config: { findOne: jest.fn().mockResolvedValue({ id: MODEL_ID, ownerType: 'system', status: 'draft', publishedVersionId: null, isSelectable: false, isDefault: false } as ModelConfig), update: configUpdate },
+      credentials: { delete: credentialDelete, findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(adminService.deleteAdminModel(MODEL_ID, ADMIN_ID)).resolves.toMatchObject({ status: 'deleted' });
+    expect(credentialDelete).toHaveBeenCalledWith(MODEL_ID);
+  });
+
+  it('rejects duplicate slugs, invalid model combinations, and sensitive capabilities', async () => {
+    const duplicateService = createService({
+      config: { findOne: jest.fn().mockResolvedValue({ id: 'another-model' } as ModelConfig) },
+    });
+    await expect(duplicateService.createAdminModel({
+      slug: 'primary-model', displayName: '主模型', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com/v1', modelName: 'example-model',
+    }, ADMIN_ID)).rejects.toBeInstanceOf(ConflictException);
+
+    const invalidService = createService({ config: { findOne: jest.fn().mockResolvedValue(null) } });
+    await expect(invalidService.createAdminModel({
+      slug: 'local-model', displayName: '本地模型', modelType: ModelType.Local, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'http://127.0.0.1:11434', modelName: 'llama3.2',
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(invalidService.createAdminModel({
+      slug: 'unsafe-model', displayName: '不安全配置', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com/v1', modelName: 'example-model', capabilities: { apiKey: 'should-not-be-here' },
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects invalid lifecycle transitions and malformed update input', async () => {
+    const modelWithoutVersion = { id: MODEL_ID, ownerType: 'system', status: 'draft', currentDraftVersionId: null, publishedVersionId: null } as ModelConfig;
+    const service = createService({ config: { findOne: jest.fn().mockResolvedValue(modelWithoutVersion) } });
+    await expect(service.publishModel(MODEL_ID, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.updateAdminModel(MODEL_ID, { displayName: '无版本' }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+
+    const publishedModel = { id: MODEL_ID, ownerType: 'system', status: 'published', currentDraftVersionId: null, publishedVersionId: PUBLISHED_ID } as ModelConfig;
+    const deleteService = createService({ config: { findOne: jest.fn().mockResolvedValue(publishedModel) } });
+    await expect(deleteService.deleteAdminModel(MODEL_ID, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+
+    const invalidUrlService = createService({ config: { findOne: jest.fn().mockResolvedValue(null) } });
+    await expect(invalidUrlService.createCustomModel({
+      displayName: '坏地址', protocol: ModelProtocol.OpenAiCompatible, baseUrl: 'not-a-url', modelName: 'x',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('covers admin detail lookup and missing model versions', async () => {
+    const model = {
+      id: MODEL_ID,
+      ownerType: 'system',
+      displayName: '主模型',
+      modelType: 'api',
+      protocol: 'openai_compatible',
+      status: 'published',
+      isDefault: true,
+      isSelectable: true,
+      currentDraftVersionId: null,
+      publishedVersionId: PUBLISHED_ID,
+    } as ModelConfig;
+    const service = createService({
+      config: { findOne: jest.fn().mockResolvedValue(model) },
+      versions: { findOne: jest.fn().mockResolvedValue(null) },
+      credentials: { findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(service.getAdminModel(MODEL_ID)).resolves.toMatchObject({ id: MODEL_ID, currentVersion: null });
+
+    const missingService = createService({ config: { findOne: jest.fn().mockResolvedValue(null) } });
+    await expect(missingService.getAdminModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('validates protocol, URL, nested capability and numeric boundaries in service code', async () => {
+    const validService = createService({
+      config: { findOne: jest.fn().mockResolvedValue(null), save: jest.fn(async (value) => value) },
+      versions: { save: jest.fn(async (value) => value), findOne: jest.fn().mockResolvedValue(null) },
+      credentials: { findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(validService.createAdminModel({
+      slug: 'ollama-local', displayName: '本地模型', modelType: ModelType.Local, protocol: ModelProtocol.Ollama,
+      baseUrl: 'http://127.0.0.1:11434', modelName: 'llama3.2', capabilities: { nested: { chat: true } },
+    }, ADMIN_ID)).resolves.toMatchObject({ status: 'draft' });
+
+    await expect(validService.createAdminModel({
+      slug: 'bad-ollama', displayName: '错误模型', modelType: ModelType.Api, protocol: ModelProtocol.Ollama,
+      baseUrl: 'https://api.example.com', modelName: 'x',
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createAdminModel({
+      slug: 'missing-fields', displayName: '', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com', modelName: '',
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createAdminModel({
+      slug: 'bad-url', displayName: '坏 URL', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'ftp://api.example.com', modelName: 'x',
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createAdminModel({
+      slug: 'nested-secret', displayName: '嵌套密钥', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com', modelName: 'x', capabilities: { nested: { token: 'secret' } },
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createAdminModel({
+      slug: 'bad-timeout', displayName: '超时配置', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com', modelName: 'x', timeoutMs: 999,
+    }, ADMIN_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createCustomModel({
+      displayName: '内部地址', protocol: ModelProtocol.OpenAiCompatible, baseUrl: 'https://service.internal/v1', modelName: 'x',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createCustomModel({
+      displayName: 'IPv6 本地地址', protocol: ModelProtocol.OpenAiCompatible, baseUrl: 'https://[::1]/v1', modelName: 'x',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createCustomModel({
+      displayName: '带凭据地址', protocol: ModelProtocol.OpenAiCompatible, baseUrl: 'https://user:pass@api.example.com/v1', modelName: 'x',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(validService.createCustomModel({
+      displayName: '', protocol: ModelProtocol.OpenAiCompatible, baseUrl: 'https://api.example.com/v1', modelName: '',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects unsupported custom protocol and incomplete update versions', async () => {
+    const service = createService({ config: { findOne: jest.fn().mockResolvedValue(null) } });
+    await expect(service.createCustomModel({
+      displayName: '错误协议', protocol: ModelProtocol.Ollama as never, baseUrl: 'https://api.example.com/v1', modelName: 'x',
+    }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+
+    const model = { id: MODEL_ID, ownerType: 'user', ownerUserId: USER_ID, status: 'draft', currentDraftVersionId: DRAFT_ID, publishedVersionId: null } as ModelConfig;
+    const incomplete = { id: DRAFT_ID, modelConfigId: MODEL_ID, version: 1, versionStatus: 'draft', provider: null, baseUrl: '', modelName: '' } as ModelConfigVersion;
+    const updateService = createService({
+      config: { findOne: jest.fn().mockResolvedValue(model) },
+      versions: { findOne: jest.fn().mockResolvedValue(incomplete) },
+    });
+    await expect(updateService.updateCustomModel(MODEL_ID, { displayName: '新草稿' }, USER_ID)).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects missing provider versions and duplicate update slugs', async () => {
+    const missingVersionService = createService({
+      config: {
+        findOne: jest.fn().mockResolvedValue({ id: MODEL_ID, status: 'published', currentDraftVersionId: DRAFT_ID } as ModelConfig),
+      },
+      versions: { findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await expect(missingVersionService.testConnection(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+
+    const model = { id: MODEL_ID, ownerType: 'system', status: 'published', currentDraftVersionId: DRAFT_ID, publishedVersionId: PUBLISHED_ID } as ModelConfig;
+    const draft = { id: DRAFT_ID, modelConfigId: MODEL_ID, version: 1, versionStatus: 'draft', baseUrl: 'https://api.example.com', modelName: 'x' } as ModelConfigVersion;
+    const findOne = jest.fn()
+      .mockResolvedValueOnce(model)
+      .mockResolvedValueOnce({ id: 'different-model', slug: 'taken' } as ModelConfig);
+    const duplicateService = createService({
+      config: { findOne },
+      versions: { findOne: jest.fn().mockResolvedValue(draft) },
+    });
+    await expect(duplicateService.updateAdminModel(MODEL_ID, { slug: 'taken' }, ADMIN_ID)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('uses a TypeORM transaction for persistent writes', async () => {
+    const configRepository = repository<ModelConfig>({
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn(async (value) => value),
+    });
+    const versionRepository = repository<ModelConfigVersion>({
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn(async (value) => value),
+    });
+    const credentialRepository = repository<ModelCredential>({
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn(async (value) => value),
+    });
+    const manager = {
+      getRepository: jest.fn((entity: unknown) => {
+        if (entity === ModelConfig) return configRepository;
+        if (entity === ModelConfigVersion) return versionRepository;
+        return credentialRepository;
+      }),
+    };
+    const dataSource = {
+      transaction: jest.fn(async (callback: (value: typeof manager) => Promise<unknown>) => callback(manager)),
+    } as unknown as DataSource;
+    const service = new ModelsService(configRepository, versionRepository, credentialRepository, new ModelCredentialCipher(Buffer.alloc(32, 7), 1), dataSource);
+
+    await service.createAdminModel({
+      slug: 'transaction-model', displayName: '事务模型', modelType: ModelType.Api, protocol: ModelProtocol.OpenAiCompatible,
+      baseUrl: 'https://api.example.com', modelName: 'x',
+    }, ADMIN_ID);
+    expect(dataSource.transaction).toHaveBeenCalledTimes(1);
+    expect(manager.getRepository).toHaveBeenCalledTimes(3);
+  });
+
+  it('supports temporary default actors while authentication is not implemented', async () => {
+    const emptyService = createService({
+      config: { find: jest.fn().mockResolvedValue([]), count: jest.fn().mockResolvedValue(0), findOne: jest.fn().mockResolvedValue(null) },
+      versions: { findOne: jest.fn().mockResolvedValue(null) },
+      credentials: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) },
+    });
+    await emptyService.listAvailableModels();
+    await emptyService.listCustomModels();
+    await emptyService.listAdminModels();
+    await expect(emptyService.updateCustomModel(MODEL_ID, { displayName: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.deleteCustomModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.disableCustomModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.updateAdminModel(MODEL_ID, { displayName: 'x' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.deleteAdminModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.publishModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.disableModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(emptyService.setDefaultModel(MODEL_ID)).rejects.toBeInstanceOf(NotFoundException);
   });
 });
