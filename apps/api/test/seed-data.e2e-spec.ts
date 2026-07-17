@@ -65,6 +65,10 @@ describe('seed data', () => {
   it('rejects production and incomplete seed credentials', () => {
     expect(() => validateSeedEnvironment({ ...developmentEnvironment, NODE_ENV: 'production' }))
       .toThrow(SeedEnvironmentError);
+    expect(() => validateSeedEnvironment({ ...developmentEnvironment, NODE_ENV: 'staging' }))
+      .toThrow(SeedEnvironmentError);
+    expect(() => validateSeedEnvironment({ ...developmentEnvironment, DATABASE_ENABLED: 'false' }))
+      .toThrow(SeedEnvironmentError);
     expect(() => validateSeedEnvironment({ ...developmentEnvironment, SEED_ADMIN_PASSWORD: '' }))
       .toThrow(SeedEnvironmentError);
     expect(() => validateSeedEnvironment({ ...developmentEnvironment, SEED_TEST_USER_PASSWORD: 'short' }))
