@@ -91,7 +91,10 @@ describe('AgentRunsService', () => {
 
   it('records failed, timeout, and cancelled terminal states with safe errors', async () => {
     const repository = createRepository();
-    repository.findOne.mockResolvedValue({ id: RUN_ID, userId: USER_ID, status: 'running' });
+    repository.findOne
+      .mockResolvedValueOnce({ id: RUN_ID, userId: USER_ID, status: 'running' })
+      .mockResolvedValueOnce({ id: RUN_ID, userId: USER_ID, status: 'running' })
+      .mockResolvedValueOnce({ id: RUN_ID, userId: USER_ID, status: 'running' });
     const service = new AgentRunsService(repository as never);
 
     await service.failRun(RUN_ID, USER_ID, { errorCode: 'MODEL_ERROR', errorMessage: 'provider failed' });
