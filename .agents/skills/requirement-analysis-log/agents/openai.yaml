@@ -1,0 +1,4 @@
+interface:
+  display_name: "需求分析记录"
+  short_description: "记录每个需求的功能分析过程"
+  default_prompt: "使用 $requirement-analysis-log 分析这个需求，并在修改代码前记录实现依据。"
