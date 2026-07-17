@@ -31,6 +31,7 @@ import {
   UpdateAdminModelRequestDto,
   UpdateCustomModelRequestDto,
 } from './models.dto';
+import { ModelsService } from './models.service';
 
 @ApiTags('Models')
 @ApiBearerAuth('bearer')
@@ -49,6 +50,8 @@ export class ModelsController {
 @ApiBearerAuth('bearer')
 @Controller('v1/custom-models')
 export class CustomModelsController {
+  constructor(private readonly modelsService: ModelsService) {}
+
   @Get()
   @ApiOperation({ summary: '列出当前用户自己的自定义模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
@@ -92,10 +95,10 @@ export class CustomModelsController {
   @ApiOperation({ summary: '测试自定义模型连接，不回显凭据或原始错误体' })
   @ApiOkResponse({ type: ModelConnectionTestResponseDto })
   @ApiProtectedErrorResponses()
-  testConnection(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async testConnection(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelConnectionTestResponseDto> {
+    return { data: await this.modelsService.testConnection(id) };
   }
 }
 
@@ -103,6 +106,8 @@ export class CustomModelsController {
 @ApiBearerAuth('bearer')
 @Controller('v1/admin/models')
 export class AdminModelsController {
+  constructor(private readonly modelsService: ModelsService) {}
+
   @Get()
   @ApiOperation({ summary: '管理员列出系统模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
@@ -167,10 +172,10 @@ export class AdminModelsController {
   @ApiOperation({ summary: '管理员测试系统模型连接' })
   @ApiOkResponse({ type: ModelConnectionTestResponseDto })
   @ApiProtectedErrorResponses()
-  testConnection(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-  ): never {
-    return contractNotImplemented();
+  async testConnection(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<ModelConnectionTestResponseDto> {
+    return { data: await this.modelsService.testConnection(id) };
   }
 
   @Post(':id/set-default')

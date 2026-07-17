@@ -7,13 +7,14 @@ import {
 } from '../src/database/entities';
 import { ModelCredentialCipher } from '../src/models/model-credential-cipher';
 import { ModelsService } from '../src/models/models.service';
+import type { ObjectLiteral, Repository } from 'typeorm';
 
 type FakeRepository<T> = {
   findOne: jest.Mock<Promise<T | null>, [unknown]>;
 };
 
-function repository<T>(record: T | null): FakeRepository<T> {
-  return { findOne: jest.fn().mockResolvedValue(record) };
+function repository<T extends ObjectLiteral>(record: T | null): Repository<T> {
+  return { findOne: jest.fn().mockResolvedValue(record) } as unknown as Repository<T>;
 }
 
 describe('ModelsService connection tests', () => {
@@ -73,7 +74,7 @@ describe('ModelsService connection tests', () => {
     jest.spyOn(global, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ message: { content: 'pong' } }), { status: 200 }),
     );
-    const publishedModel = { ...model, currentDraftVersionId: null };
+    const publishedModel = { ...model, currentDraftVersionId: null, protocol: 'ollama' };
     const publishedVersion = {
       ...draftVersion,
       id: model.publishedVersionId,
@@ -84,7 +85,7 @@ describe('ModelsService connection tests', () => {
     const service = new ModelsService(
       repository(publishedModel as ModelConfig),
       repository(publishedVersion as ModelConfigVersion),
-      repository(null),
+      repository<ModelCredential>(null),
       cipher,
     );
 
@@ -102,7 +103,7 @@ describe('ModelsService connection tests', () => {
     const service = new ModelsService(
       repository({ ...model, protocol: 'provider_specific' } as ModelConfig),
       repository(draftVersion as ModelConfigVersion),
-      repository(null),
+      repository<ModelCredential>(null),
       cipher,
     );
 
@@ -112,9 +113,9 @@ describe('ModelsService connection tests', () => {
     expect(fetchMock).not.toHaveBeenCalled();
 
     const missingService = new ModelsService(
-      repository(null),
-      repository(null),
-      repository(null),
+      repository<ModelConfig>(null),
+      repository<ModelConfigVersion>(null),
+      repository<ModelCredential>(null),
       cipher,
     );
     await expect(missingService.testConnection(model.id as string)).rejects.toBeInstanceOf(
@@ -129,7 +130,7 @@ describe('ModelsService connection tests', () => {
     const service = new ModelsService(
       repository(model as ModelConfig),
       repository(draftVersion as ModelConfigVersion),
-      repository(null),
+      repository<ModelCredential>(null),
       cipher,
     );
 
