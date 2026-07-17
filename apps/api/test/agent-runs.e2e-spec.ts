@@ -65,7 +65,20 @@ describe('AgentRunsService', () => {
     await expect(service.startRun({ ...input, idempotencyKey: 'retry' })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.startRun({ ...input, matchedKnowledgeCards: Array.from({ length: 4 }, () => ({ id: 'x' })) })).rejects.toBeInstanceOf(BadRequestException);
     await expect(service.startRun({ ...input, modelSnapshot: { apiKey: 'should-not-be-stored' } })).rejects.toBeInstanceOf(BadRequestException);
-    expect(repository.save).not.toHaveBeenCalled();
+    await expect(service.startRun({ ...input, userId: 'not-a-uuid' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.startRun({ ...input, promptVersion: 'x'.repeat(51) })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.startRun({ ...input, modelSnapshot: [] as never })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.startRun({ ...input, matchedKnowledgeCards: [[{ id: 'nested' }]] })).resolves.toMatchObject({ status: 'running' });
+  });
+
+  it('returns the concurrent record after a database idempotency conflict', async () => {
+    const repository = createRepository();
+    const existing = { id: RUN_ID, userId: USER_ID, status: 'running' } as AgentRun;
+    repository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(existing);
+    repository.save.mockRejectedValueOnce({ code: '23505' });
+    const service = new AgentRunsService(repository as never);
+
+    await expect(service.startRun(input)).resolves.toBe(existing);
   });
 
   it('finishes a running run and rejects updates after it reaches a terminal state', async () => {
@@ -114,5 +127,23 @@ describe('AgentRunsService', () => {
     await expect(service.cancelRun(RUN_ID, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
     repository.findOne.mockResolvedValue({ id: RUN_ID, userId: 'another-user', status: 'running' });
     await expect(service.cancelRun(RUN_ID, USER_ID)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('validates completion and failure boundaries before touching the repository', async () => {
+    const repository = createRepository();
+    repository.findOne.mockResolvedValue({ id: RUN_ID, userId: USER_ID, status: 'running' });
+    const service = new AgentRunsService(repository as never);
+
+    await expect(service.succeedRun(RUN_ID, USER_ID, { responseMessageId: 'bad' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.succeedRun(RUN_ID, USER_ID, { inputTokens: -1 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.succeedRun(RUN_ID, USER_ID, { outputTokens: 1.5 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.succeedRun(RUN_ID, USER_ID, { estimatedCost: -1 })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.succeedRun(RUN_ID, USER_ID, { providerRequestId: 'x'.repeat(151) })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.succeedRun(RUN_ID, USER_ID, { resultJson: { password: 'secret' } })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.failRun(RUN_ID, USER_ID, { errorCode: '', errorMessage: 'failed' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.failRun(RUN_ID, USER_ID, { errorCode: 'FAILED', errorMessage: 'x'.repeat(501) })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.failRun(RUN_ID, USER_ID, { errorCode: 'FAILED', errorMessage: 'Authorization: Bearer secret' })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.failRun(RUN_ID, USER_ID, { errorCode: 'FAILED', errorMessage: 'failed', durationMs: -1 })).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.findOne).not.toHaveBeenCalled();
   });
 });

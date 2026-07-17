@@ -218,6 +218,9 @@ export class AgentRunsService {
     if (!input.errorCode || input.errorCode.length > 80 || !input.errorMessage || input.errorMessage.length > 500) {
       throw new BadRequestException('Agent run error details are invalid');
     }
+    if (SENSITIVE_KEY_PATTERN.test(input.errorMessage) || /stack trace|at \S+\(/i.test(input.errorMessage)) {
+      throw new BadRequestException('Agent run errorMessage contains sensitive diagnostic data');
+    }
     if (input.durationMs !== undefined && (!Number.isInteger(input.durationMs) || input.durationMs < 0)) {
       throw new BadRequestException('Agent run durationMs must be a non-negative integer');
     }
