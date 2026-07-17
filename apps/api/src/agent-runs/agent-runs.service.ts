@@ -98,6 +98,13 @@ export class AgentRunsService {
     }
   }
 
+  async findByIdempotencyKey(userId: string, idempotencyKey: string): Promise<AgentRun | null> {
+    if (!UUID_V4_PATTERN.test(userId) || !UUID_V4_PATTERN.test(idempotencyKey)) {
+      throw new BadRequestException('Agent run identifiers must be UUID v4 values');
+    }
+    return this.repository().findOne({ where: { userId, idempotencyKey } });
+  }
+
   async succeedRun(id: string, userId: string, input: FinishAgentRunInput = {}): Promise<AgentRun> {
     this.validateFinishInput(input);
     return this.finishRun(id, userId, 'succeeded', input);

@@ -7,8 +7,10 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Res,
   Query,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -20,6 +22,7 @@ import {
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
 import { contractNotImplemented } from '../common/contract-not-implemented';
+import { DEVELOPMENT_USER_ID } from '../models/models.service';
 import {
   ConversationListResponseDto,
   ConversationPaginationQueryDto,
@@ -28,11 +31,14 @@ import {
   MessageListResponseDto,
   SendMessageRequestDto,
 } from './conversations.dto';
+import { ConversationsService } from './conversations.service';
 
 @ApiTags('Conversations')
 @ApiBearerAuth('bearer')
 @Controller('v1/conversations')
 export class ConversationsController {
+  constructor(private readonly conversations: ConversationsService) {}
+
   @Post()
   @ApiOperation({
     summary: '创建会话并固定当前模型发布版本',
@@ -40,16 +46,16 @@ export class ConversationsController {
   })
   @ApiCreatedResponse({ type: ConversationResponseDto })
   @ApiProtectedErrorResponses()
-  create(@Body() _request: CreateConversationRequestDto): never {
-    return contractNotImplemented();
+  async create(@Body() request: CreateConversationRequestDto): Promise<ConversationResponseDto> {
+    return { data: await this.conversations.createConversation(request, DEVELOPMENT_USER_ID) as never };
   }
 
   @Get()
   @ApiOperation({ summary: '列出当前用户的会话' })
   @ApiOkResponse({ type: ConversationListResponseDto })
   @ApiProtectedErrorResponses()
-  list(@Query() _query: ConversationPaginationQueryDto): never {
-    return contractNotImplemented();
+  async list(@Query() query: ConversationPaginationQueryDto): Promise<ConversationListResponseDto> {
+    return await this.conversations.listConversations(query, DEVELOPMENT_USER_ID) as never;
   }
 
   @Get(':id/messages')
@@ -57,10 +63,10 @@ export class ConversationsController {
   @ApiOkResponse({ type: MessageListResponseDto })
   @ApiProtectedErrorResponses()
   listMessages(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-    @Query() _query: ConversationPaginationQueryDto,
-  ): never {
-    return contractNotImplemented();
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query() query: ConversationPaginationQueryDto,
+  ): Promise<MessageListResponseDto> {
+    return this.conversations.listMessages(id, query, DEVELOPMENT_USER_ID) as never;
   }
 
   @Post(':id/messages')
@@ -81,9 +87,17 @@ export class ConversationsController {
   })
   @ApiProtectedErrorResponses()
   sendMessage(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) _id: string,
-    @Body() _request: SendMessageRequestDto,
-  ): never {
-    return contractNotImplemented();
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() request: SendMessageRequestDto,
+    @Res() response: Response,
+  ): Promise<void> {
+    response.status(HttpStatus.OK);
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+    for await (const event of this.conversations.streamMessage(id, request, DEVELOPMENT_USER_ID)) {
+      response.write(`event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`);
+    }
+    response.end();
   }
 }

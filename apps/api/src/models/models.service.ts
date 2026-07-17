@@ -38,6 +38,8 @@ import {
   OllamaModelAdapter,
   OpenAiCompatibleModelAdapter,
   type ModelAdapterConfig,
+  type ModelCompletionResult,
+  type ModelMessage,
   type ModelConnectionResult,
 } from './model-adapters';
 import { ModelCredentialCipher } from './model-credential-cipher';
@@ -69,6 +71,13 @@ type ModelRepositories = {
 };
 
 type Pagination = { page: number; perPage: number; skip: number; take: number };
+
+export type PublishedModelRuntime = {
+  modelConfigId: string;
+  modelConfigVersionId: string;
+  snapshot: Record<string, unknown>;
+  complete: (messages: ModelMessage[]) => Promise<ModelCompletionResult>;
+};
 
 const DEFAULT_TIMEOUT_MS = 60000;
 const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
@@ -366,6 +375,67 @@ export class ModelsService {
     };
 
     return adapter.testConnection(config);
+  }
+
+  async getPublishedModelRuntime(
+    modelConfigId: string,
+    userId = DEVELOPMENT_USER_ID,
+  ): Promise<PublishedModelRuntime> {
+    const repositories = this.repositories();
+    const model = await repositories.configs.findOne({
+      where: [
+        { id: modelConfigId, ownerType: 'system', status: 'published', isSelectable: true },
+        { id: modelConfigId, ownerType: 'user', ownerUserId: userId, status: 'published', isSelectable: true },
+      ],
+    });
+    if (!model || (model.ownerType === 'user' && model.ownerUserId !== userId)) {
+      throw new NotFoundException('Published model not found');
+    }
+    if (!model.publishedVersionId) throw new BadRequestException('Published model has no version');
+
+    const version = await repositories.versions.findOne({
+      where: { id: model.publishedVersionId, modelConfigId },
+    });
+    if (!version || version.versionStatus !== 'published') {
+      throw new NotFoundException('Published model version not found');
+    }
+
+    let apiKey: string | undefined;
+    const credential = await repositories.credentials.findOne({ where: { modelConfigId } });
+    if (credential) {
+      if (!this.credentialCipher) throw new InternalServerErrorException('Model credential is unavailable');
+      try {
+        apiKey = this.credentialCipher.decrypt(credential);
+      } catch {
+        throw new InternalServerErrorException('Model credential is unavailable');
+      }
+    }
+
+    const adapter = this.createAdapter(model.protocol);
+    const config: ModelAdapterConfig = {
+      baseUrl: version.baseUrl,
+      modelName: version.modelName,
+      apiKey,
+      timeoutMs: version.timeoutMs,
+      maxOutputTokens: version.maxOutputTokens,
+    };
+    return {
+      modelConfigId: model.id,
+      modelConfigVersionId: version.id,
+      snapshot: {
+        displayName: model.displayName,
+        ownerType: model.ownerType,
+        modelType: model.modelType,
+        protocol: model.protocol,
+        provider: version.provider,
+        baseUrl: version.baseUrl,
+        modelName: version.modelName,
+        version: version.version,
+        supportsStream: version.supportsStream,
+        supportsStructuredOutput: version.supportsStructuredOutput,
+      },
+      complete: (messages) => adapter.complete(config, messages),
+    };
   }
 
   private async updateModel(
