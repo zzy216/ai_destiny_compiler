@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import {
   ModelConfig,
@@ -142,5 +146,39 @@ describe('ModelsService connection tests', () => {
       errorMessage: 'Model provider returned HTTP 503',
     });
     expect(JSON.stringify(result)).not.toContain('provider secret response');
+  });
+
+  it('rejects missing versions and refuses to use credentials without a valid cipher', async () => {
+    const noVersionService = new ModelsService(
+      repository({ ...model, currentDraftVersionId: null, publishedVersionId: null } as ModelConfig),
+      repository<ModelConfigVersion>(null),
+      repository<ModelCredential>(null),
+      cipher,
+    );
+    await expect(noVersionService.testConnection(model.id as string)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    const credential = cipher.encrypt('secret-api-key');
+    const missingCipherService = new ModelsService(
+      repository(model as ModelConfig),
+      repository(draftVersion as ModelConfigVersion),
+      repository({ modelConfigId: model.id, ...credential } as ModelCredential),
+      undefined,
+    );
+    await expect(missingCipherService.testConnection(model.id as string)).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
+
+    const invalidCiphertext = { ...credential, ciphertext: Buffer.from('tampered') };
+    const invalidCredentialService = new ModelsService(
+      repository(model as ModelConfig),
+      repository(draftVersion as ModelConfigVersion),
+      repository({ modelConfigId: model.id, ...invalidCiphertext } as ModelCredential),
+      cipher,
+    );
+    await expect(invalidCredentialService.testConnection(model.id as string)).rejects.toBeInstanceOf(
+      InternalServerErrorException,
+    );
   });
 });

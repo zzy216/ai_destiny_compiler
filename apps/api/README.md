@@ -28,4 +28,4 @@ pnpm migration:revert
 
 ## 当前边界
 
-Controller 已定义路由、DTO、校验、HTTP 状态和 Swagger Schema。合法请求暂时返回 `501 contract_not_implemented`，用于明确区分“契约已确定”和“业务逻辑已完成”。数据库层已准备好 17 个核心 Entity，业务 Service、认证和模型调用仍属于后续阶段。
+Controller 已定义路由、DTO、校验、HTTP 状态和 Swagger Schema；模型连接测试路由已接入适配器和数据库版本配置，其余模型 CRUD、认证和会话业务仍会暂时返回 `501 contract_not_implemented`。数据库层已准备好 17 个核心 Entity。
