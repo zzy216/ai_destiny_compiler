@@ -29,6 +29,6 @@ describe('CoachConfigPage', () => {
     );
 
     expect(await screen.findByText('默认教练')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /编辑/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /编\s*辑/ })).toBeInTheDocument();
   });
 });

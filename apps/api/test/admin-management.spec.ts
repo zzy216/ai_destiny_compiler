@@ -1,11 +1,11 @@
-import type { Repository } from 'typeorm';
+import type { ObjectLiteral, Repository } from 'typeorm';
 
 import { AgentRun, CoachConfig, KnowledgeCard } from '../src/database/entities';
 import { AdminManagementService } from '../src/admin/admin-management.service';
 
 const ADMIN_ID = '00000000-0000-4000-8000-000000000001';
 
-function repository<T>(overrides: Record<string, jest.Mock> = {}): Repository<T> {
+function repository<T extends ObjectLiteral>(overrides: Record<string, jest.Mock> = {}): Repository<T> {
   return {
     findAndCount: jest.fn(),
     findOne: jest.fn(),

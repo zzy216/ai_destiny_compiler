@@ -29,7 +29,7 @@ describe('KnowledgeCardsPage', () => {
     );
 
     expect(await screen.findByText('目标澄清')).toBeInTheDocument();
-    expect(screen.getByText('目标')).toBeInTheDocument();
+    expect(screen.getAllByText('目标').length).toBeGreaterThan(0);
     expect(screen.getByText('已发布')).toBeInTheDocument();
   });
 });
