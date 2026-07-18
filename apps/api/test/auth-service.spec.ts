@@ -8,7 +8,7 @@ import {
   createAuthRuntimeConfig,
   hashSecret,
 } from '../src/auth/auth.service';
-import { AdminRoleGuard, FixedWindowRateLimitGuard } from '../src/auth/auth.guards';
+import { AdminRoleGuard, AuthGuard, FixedWindowRateLimitGuard } from '../src/auth/auth.guards';
 import {
   AuthInvitation,
   AuthSession,
@@ -57,6 +57,18 @@ function user(overrides: Partial<User> = {}): User {
 }
 
 describe('AuthService', () => {
+  it('validates auth runtime secrets and token lifetimes', () => {
+    expect(() => createAuthRuntimeConfig({
+      AUTH_ACCESS_TOKEN_SECRET: 'not-base64',
+      TOKEN_HASH_KEY: Buffer.alloc(32, 12).toString('base64'),
+    })).toThrow('AUTH_ACCESS_TOKEN_SECRET');
+    expect(() => createAuthRuntimeConfig({
+      AUTH_ACCESS_TOKEN_SECRET: Buffer.alloc(32, 11).toString('base64'),
+      TOKEN_HASH_KEY: Buffer.alloc(32, 12).toString('base64'),
+      AUTH_ACCESS_TOKEN_TTL_SECONDS: '0',
+    })).toThrow('AUTH_ACCESS_TOKEN_TTL_SECONDS');
+  });
+
   it('logs in with email or username, stores only the refresh token hash, and returns a signed access token', async () => {
     const passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
     const savedSessions: AuthSession[] = [];
@@ -112,6 +124,27 @@ describe('AuthService', () => {
     await expect(service.login({ identifier: 'missing@example.com', password: PASSWORD })).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  it('blocks disabled and temporarily locked users during login', async () => {
+    const passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
+    const disabled = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user({ passwordHash, status: 'disabled' })), update: jest.fn() }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({}),
+      config(),
+    );
+    await expect(disabled.login({ identifier: 'user@example.com', password: PASSWORD })).rejects.toBeInstanceOf(ForbiddenException);
+
+    const locked = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user({ passwordHash, lockedUntil: new Date(Date.now() + 60_000) })), update: jest.fn() }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({}),
+      config(),
+    );
+    await expect(locked.login({ identifier: 'user@example.com', password: PASSWORD })).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
   it('registers with a valid one-time invitation and consumes it in the same flow', async () => {
     const invite: AuthInvitation = {
       id: INVITE_ID,
@@ -158,6 +191,47 @@ describe('AuthService', () => {
       usedBy: result.user.id,
       usedAt: expect.any(Date),
     }));
+  });
+
+  it('rejects expired invitations and duplicate identities', async () => {
+    const runtime = config();
+    const expiredInvite = {
+      id: INVITE_ID,
+      codeHash: hashSecret('invite-code-2026', runtime.tokenHashKey),
+      targetRole: 'user',
+      createdBy: ADMIN_ID,
+      expiresAt: new Date(Date.now() - 60_000),
+      usedBy: null,
+      usedAt: null,
+      revokedAt: null,
+      createdAt: new Date(),
+    } as AuthInvitation;
+    const service = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(null) }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({ findOne: jest.fn().mockResolvedValue(expiredInvite) }),
+      repository<AuthSession>({}),
+      runtime,
+    );
+
+    await expect(service.register({
+      invitationCode: 'invite-code-2026',
+      email: 'new-user@example.com',
+      password: PASSWORD,
+    })).rejects.toBeInstanceOf(UnauthorizedException);
+
+    const duplicateEmail = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user()) }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({ findOne: jest.fn().mockResolvedValue({ ...expiredInvite, expiresAt: new Date(Date.now() + 60_000) }) }),
+      repository<AuthSession>({}),
+      runtime,
+    );
+    await expect(duplicateEmail.register({
+      invitationCode: 'invite-code-2026',
+      email: 'user@example.com',
+      password: PASSWORD,
+    })).rejects.toBeInstanceOf(Error);
   });
 
   it('rotates refresh tokens and revokes the whole family when an old token is reused', async () => {
@@ -207,6 +281,60 @@ describe('AuthService', () => {
     }));
   });
 
+  it('rejects expired refresh tokens and refresh tokens without an active user', async () => {
+    const runtime = config();
+    const token = 'r'.repeat(48);
+    const expiredSession = {
+      id: '00000000-0000-4000-8000-000000000402',
+      userId: USER_ID,
+      tokenFamilyId: '00000000-0000-4000-8000-000000000401',
+      refreshTokenHash: hashSecret(token, runtime.tokenHashKey),
+      expiresAt: new Date(Date.now() - 60_000),
+      revokedAt: null,
+    } as AuthSession;
+    const service = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user()) }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({ findOne: jest.fn().mockResolvedValue(expiredSession) }),
+      runtime,
+    );
+    await expect(service.refresh({ refreshToken: token })).rejects.toBeInstanceOf(UnauthorizedException);
+
+    const noUser = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(null) }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({ findOne: jest.fn().mockResolvedValue({ ...expiredSession, expiresAt: new Date(Date.now() + 60_000) }) }),
+      runtime,
+    );
+    await expect(noUser.refresh({ refreshToken: token })).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('logs out and changes password by revoking active sessions', async () => {
+    const passwordHash = await argon2.hash(PASSWORD, { type: argon2.argon2id });
+    const sessionUpdate = jest.fn();
+    const userUpdate = jest.fn();
+    const service = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user({ passwordHash })), update: userUpdate }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({ update: sessionUpdate }),
+      config(),
+    );
+
+    await expect(service.logout({ refreshToken: 'r'.repeat(48) })).resolves.toEqual({ success: true });
+    await expect(service.changePassword(USER_ID, {
+      currentPassword: PASSWORD,
+      newPassword: `${PASSWORD}-new`,
+    })).resolves.toEqual({ success: true });
+
+    expect(userUpdate).toHaveBeenCalledWith(USER_ID, expect.objectContaining({ passwordChangedAt: expect.any(Date) }));
+    expect(sessionUpdate).toHaveBeenCalledWith(expect.objectContaining({ userId: USER_ID }), expect.objectContaining({
+      revokeReason: 'password_changed',
+    }));
+  });
+
   it('rejects an access token issued before the user changed password', async () => {
     const runtime = config();
     const service = new AuthService(
@@ -226,9 +354,45 @@ describe('AuthService', () => {
 
     await expect(service.verifyAccessToken(token)).rejects.toBeInstanceOf(UnauthorizedException);
   });
+
+  it('rejects malformed, expired, tampered, and disabled-user access tokens', async () => {
+    const runtime = config();
+    const service = new AuthService(
+      repository<User>({ findOne: jest.fn().mockResolvedValue(user({ status: 'disabled' })) }),
+      repository<UserProfile>({}),
+      repository<AuthInvitation>({}),
+      repository<AuthSession>({}),
+      runtime,
+    );
+
+    await expect(service.verifyAccessToken('not-a-token')).rejects.toBeInstanceOf(UnauthorizedException);
+    const expired = service.signAccessToken({
+      id: USER_ID,
+      role: 'user',
+      issuedAt: new Date(Date.now() - (runtime.accessTokenTtlSeconds + 5) * 1000),
+    });
+    await expect(service.verifyAccessToken(expired)).rejects.toBeInstanceOf(UnauthorizedException);
+
+    const valid = service.signAccessToken({ id: USER_ID, role: 'user' });
+    await expect(service.verifyAccessToken(`${valid.slice(0, -2)}xx`)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(service.verifyAccessToken(valid)).rejects.toBeInstanceOf(ForbiddenException);
+  });
 });
 
 describe('auth guards', () => {
+  it('authenticates Bearer tokens and rejects missing credentials', async () => {
+    const auth = { verifyAccessToken: jest.fn().mockResolvedValue({ id: USER_ID, role: 'user' }) };
+    const guard = new AuthGuard(auth as never);
+    const request = { headers: { authorization: 'Bearer token' } };
+    const context = { switchToHttp: () => ({ getRequest: () => request }) };
+
+    await expect(guard.canActivate(context as never)).resolves.toBe(true);
+    expect(request).toMatchObject({ user: { id: USER_ID, role: 'user' } });
+
+    const missing = { switchToHttp: () => ({ getRequest: () => ({ headers: {} }) }) };
+    await expect(guard.canActivate(missing as never)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('allows only admin users through the admin role guard', () => {
     const guard = new AdminRoleGuard();
     const context = {
@@ -245,6 +409,13 @@ describe('auth guards', () => {
       }),
     };
     expect(() => guard.canActivate(userContext as never)).toThrow(ForbiddenException);
+
+    const missingUserContext = {
+      switchToHttp: () => ({
+        getRequest: () => ({}),
+      }),
+    };
+    expect(() => guard.canActivate(missingUserContext as never)).toThrow(UnauthorizedException);
   });
 
   it('enforces a fixed-window limit without leaking credentials', () => {
@@ -271,5 +442,22 @@ describe('auth guards', () => {
       expect((error as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
     }
     expect(JSON.stringify((guard as unknown as { buckets: Map<string, unknown> }).buckets)).not.toContain(PASSWORD);
+  });
+
+  it('builds rate-limit keys from url and socket fallback values', () => {
+    const guard = new FixedWindowRateLimitGuard({ max: 1, windowMs: 60_000 });
+    const context = {
+      switchToHttp: () => ({
+        getRequest: () => ({
+          headers: {},
+          method: 'POST',
+          url: '/v1/auth/refresh',
+          socket: { remoteAddress: '10.0.0.8' },
+        }),
+      }),
+    };
+
+    expect(guard.canActivate(context as never)).toBe(true);
+    expect(() => guard.canActivate(context as never)).toThrow(HttpException);
   });
 });
