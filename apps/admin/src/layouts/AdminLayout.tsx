@@ -1,5 +1,7 @@
-import { Layout, Menu, Tag, Typography } from 'antd';
+import { Button, Layout, Menu, Tag, Typography } from 'antd';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+
+import { useAuth } from '../app/AuthProvider';
 
 const items = [
   { key: '/', label: '运营总览' },
@@ -11,6 +13,7 @@ const items = [
 
 export function AdminLayout() {
   const location = useLocation();
+  const { logout } = useAuth();
   const selected = items.find((item) => item.key !== '/' && location.pathname.startsWith(item.key))?.key ?? '/';
 
   return (
@@ -22,7 +25,7 @@ export function AdminLayout() {
       <Layout>
         <Layout.Header className="admin-header">
           <div><Typography.Title level={4}>管理后台</Typography.Title><Typography.Text type="secondary">模型、教练配置与知识资产</Typography.Text></div>
-          <Tag color="gold">开发模式</Tag>
+          <div className="admin-session"><Tag color="green">管理员</Tag><Button size="small" onClick={logout}>退出</Button></div>
         </Layout.Header>
         <Layout.Content className="admin-content"><Outlet /></Layout.Content>
       </Layout>

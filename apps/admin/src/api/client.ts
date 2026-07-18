@@ -78,15 +78,53 @@ export type CreateModelInput = {
 export type CoachConfigInput = Omit<CoachConfig, 'id' | 'version' | 'status'>;
 export type KnowledgeCardInput = Omit<KnowledgeCard, 'id' | 'version' | 'status'>;
 
+export type AuthSession = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type LoginInput = {
+  identifier: string;
+  password: string;
+  deviceName?: string;
+};
+
+export type LoginResponse = {
+  data: AuthSession & {
+    expiresInSeconds: number;
+    user: { id: string; role: 'user' | 'admin'; status: 'active' | 'disabled' | 'locked' };
+  };
+};
+
+let authSession: AuthSession | null = null;
+
+export function setAuthSession(session: AuthSession) {
+  authSession = session;
+}
+
+export function clearAuthSession() {
+  authSession = null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authSession ? { Authorization: `Bearer ${authSession.accessToken}` } : {}),
+      ...(init?.headers ?? {}),
+    },
   });
-  const payload = (await response.json().catch(() => null)) as T | { message?: string } | null;
+  const payload = (await response.json().catch(() => null)) as T | { message?: string; error?: { message?: string } } | null;
   if (!response.ok) {
-    const message = payload && typeof payload === 'object' && 'message' in payload ? payload.message : undefined;
+    const message = payload && typeof payload === 'object'
+      ? 'error' in payload && payload.error?.message
+        ? payload.error.message
+        : 'message' in payload
+          ? payload.message
+          : undefined
+      : undefined;
     throw new Error(message || `请求失败（${response.status}）`);
   }
   return payload as T;
@@ -99,6 +137,7 @@ const query = (params: Record<string, string | number | undefined>) => {
 };
 
 export const apiClient = {
+  login: (input: LoginInput) => request<LoginResponse>('/v1/auth/login', { method: 'POST', body: JSON.stringify(input) }),
   listModels: () => request<Page<Model>>('/v1/admin/models'),
   createModel: (input: CreateModelInput) => request<{ data: Model }>('/v1/admin/models', { method: 'POST', body: JSON.stringify(input) }),
   updateModel: (id: string, input: Partial<CreateModelInput>) => request<{ data: Model }>(`/v1/admin/models/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),

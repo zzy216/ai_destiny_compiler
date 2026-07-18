@@ -7,7 +7,12 @@ body { margin: 0; min-width: 320px; }
 .brand-orb { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; color: #14213d; background: #fca311; }
 .admin-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #fff; padding: 16px 28px; height: auto; min-height: 80px; border-bottom: 1px solid #e7eaf0; }
 .admin-header h4 { margin: 0; }
+.admin-session { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .admin-content { padding: 28px; }
+.login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f5f7fb; }
+.login-panel { width: min(100%, 420px); display: flex; flex-direction: column; gap: 18px; padding: 32px; background: #fff; border: 1px solid #e7eaf0; border-radius: 8px; box-shadow: 0 16px 40px rgba(20, 33, 61, 0.08); }
+.login-brand { display: flex; align-items: center; gap: 10px; color: #14213d; font-weight: 700; }
+.login-panel h2 { margin: 0; }
 .page-stack { display: flex; flex-direction: column; gap: 20px; }
 .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .page-heading h2 { margin: 0 0 8px; font-size: 28px; }
@@ -18,4 +23,4 @@ body { margin: 0; min-width: 320px; }
 .link-button { border: 0; padding: 0; color: #1677ff; background: transparent; cursor: pointer; }
 .form-stack { display: flex; flex-direction: column; gap: 14px; }
 .form-stack label { display: flex; flex-direction: column; gap: 6px; color: #46516a; }
-@media (max-width: 640px) { .admin-content { padding: 16px; } .page-heading { flex-direction: column; } }
+@media (max-width: 640px) { .admin-content { padding: 16px; } .page-heading { flex-direction: column; } .login-panel { padding: 24px; } }
