@@ -1,12 +1,26 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AdminApp } from './App';
 
+const mocks = vi.hoisted(() => ({
+  login: vi.fn().mockResolvedValue({
+    data: {
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      user: { id: 'admin-1', role: 'admin', status: 'active' },
+    },
+  }),
+}));
+
 vi.mock('../api/client', () => ({
+  setAuthSession: vi.fn(),
+  clearAuthSession: vi.fn(),
   apiClient: {
+    login: mocks.login,
     listModels: vi.fn().mockResolvedValue({ data: [], meta: { page: 1, perPage: 20, total: 0, totalPages: 0 } }),
     listCoachConfigs: vi.fn().mockResolvedValue({ data: [], meta: { page: 1, perPage: 20, total: 0, totalPages: 0 } }),
     listKnowledgeCards: vi.fn().mockResolvedValue({ data: [], meta: { page: 1, perPage: 20, total: 0, totalPages: 0 } }),
@@ -15,13 +29,25 @@ vi.mock('../api/client', () => ({
 }));
 
 describe('AdminApp', () => {
-  it('renders the admin navigation and dashboard overview', async () => {
+  it('requires login before rendering the admin navigation', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={queryClient}><MemoryRouter initialEntries={['/']}><AdminApp /></MemoryRouter></QueryClientProvider>);
 
-    expect(screen.getByText('命运编译器')).toBeInTheDocument();
+    expect(screen.queryByText('命运编译器')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('账号'), 'admin@destiny.local');
+    await userEvent.type(screen.getByLabelText('密码'), 'correct-horse-battery-staple');
+    await userEvent.click(screen.getByRole('button', { name: '登录' }));
+
+    expect(mocks.login).toHaveBeenCalledWith({
+      identifier: 'admin@destiny.local',
+      password: 'correct-horse-battery-staple',
+      deviceName: 'React 管理后台',
+    });
+    expect(await screen.findByText('命运编译器')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '模型设置' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: '运营总览' })).toBeInTheDocument();
-    expect(screen.getByText('开发模式')).toBeInTheDocument();
+    expect(screen.getByText('管理员')).toBeInTheDocument();
   });
 });
