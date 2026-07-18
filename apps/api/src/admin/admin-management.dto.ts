@@ -71,23 +71,23 @@ export class CreateCoachConfigRequestDto {
   @IsNotEmpty()
   declare systemPrompt: string;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare conversationRules: Record<string, unknown>;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare actionRules: Record<string, unknown>;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare prohibitedContent: Record<string, unknown>;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare safetyRules: Record<string, unknown>;
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare outputSchema: Record<string, unknown>;
 
@@ -128,7 +128,7 @@ export class CreateKnowledgeCardRequestDto {
   @IsString({ each: true })
   declare problemSignals: string[];
 
-  @ApiProperty({ type: 'object' })
+  @ApiProperty({ type: 'object', additionalProperties: true })
   @IsObject()
   declare variables: Record<string, unknown>;
 

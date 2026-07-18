@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Card, Input, Modal, Space, Table, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient, type CoachConfig } from '../../api/client';
+import { apiClient, type CoachConfig, type CoachConfigInput } from '../../api/client';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { StatusTag } from '../../components/StatusTag';
 
@@ -11,6 +11,7 @@ export function CoachConfigPage() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['admin', 'coach-configs'], queryFn: () => apiClient.listCoachConfigs() });
   const publish = useMutation({ mutationFn: apiClient.publishCoachConfig, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['admin', 'coach-configs'] }); message.success('教练配置已发布'); } });
+  const save = useMutation({ mutationFn: ({ id, config }: { id: string | null; config: CoachConfigInput | Partial<CoachConfigInput> }) => id ? apiClient.updateCoachConfig(id, config) : apiClient.createCoachConfig(config as CoachConfigInput), onSuccess: async (_, variables) => { await queryClient.invalidateQueries({ queryKey: ['admin', 'coach-configs'] }); setEditing(null); message.success(variables.id ? '教练配置已保存' : '教练配置草稿已创建'); } });
   if (query.isLoading) return <LoadingState />;
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
   const configs = query.data?.data ?? [];
@@ -24,7 +25,7 @@ export function CoachConfigPage() {
       { title: '操作', render: (_: unknown, record: CoachConfig) => <Space><Button size="small" onClick={() => setEditing(record)}>编辑</Button>{record.status === 'draft' && <Button size="small" type="primary" onClick={() => void publish.mutateAsync(record.id)}>发布</Button>}</Space> },
     ]} />}</Card>
     <Modal title={editing?.id ? '编辑教练配置' : '新建教练配置'} open={Boolean(editing)} onCancel={() => setEditing(null)} footer={null}>
-      <div className="form-stack"><label>名称<Input value={editing?.name} onChange={(event) => setEditing((current) => current && { ...current, name: event.target.value })} /></label><label>产品目标<Input.TextArea value={editing?.productGoal} onChange={(event) => setEditing((current) => current && { ...current, productGoal: event.target.value })} /></label><Button type="primary" onClick={() => { message.info('草稿编辑界面已就绪，保存接口将在下一次迭代接入'); setEditing(null); }}>保存草稿</Button></div>
+      <div className="form-stack"><label>名称<Input value={editing?.name} onChange={(event) => setEditing((current) => current && { ...current, name: event.target.value })} /></label><label>产品目标<Input.TextArea value={editing?.productGoal} onChange={(event) => setEditing((current) => current && { ...current, productGoal: event.target.value })} /></label><Button type="primary" loading={save.isPending} onClick={() => { if (!editing) return; if (!editing.name.trim() || !editing.productGoal.trim()) { message.error('名称和产品目标不能为空'); return; } const config = { name: editing.name, productGoal: editing.productGoal, roleDefinition: editing.roleDefinition ?? '', systemPrompt: editing.systemPrompt ?? '', conversationRules: editing.conversationRules ?? {}, actionRules: editing.actionRules ?? {}, prohibitedContent: editing.prohibitedContent ?? {}, safetyRules: editing.safetyRules ?? {}, outputSchema: editing.outputSchema ?? {}, defaultModelConfigId: editing.defaultModelConfigId ?? null }; save.mutate({ id: editing.id || null, config }); }}>保存草稿</Button></div>
     </Modal>
   </div>;
 }

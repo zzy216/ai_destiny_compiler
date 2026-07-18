@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Card, Input, Modal, Space, Table, Tag, message } from 'antd';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { apiClient, type KnowledgeCard } from '../../api/client';
+import { apiClient, type KnowledgeCard, type KnowledgeCardInput } from '../../api/client';
 import { EmptyState, ErrorState, LoadingState } from '../../components/States';
 import { StatusTag } from '../../components/StatusTag';
 
@@ -11,6 +11,7 @@ export function KnowledgeCardsPage() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ['admin', 'knowledge-cards'], queryFn: () => apiClient.listKnowledgeCards() });
   const publish = useMutation({ mutationFn: apiClient.publishKnowledgeCard, onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['admin', 'knowledge-cards'] }); message.success('知识卡已发布'); } });
+  const save = useMutation({ mutationFn: ({ id, card }: { id: string | null; card: KnowledgeCardInput | Partial<KnowledgeCardInput> }) => id ? apiClient.updateKnowledgeCard(id, card) : apiClient.createKnowledgeCard(card as KnowledgeCardInput), onSuccess: async (_, variables) => { await queryClient.invalidateQueries({ queryKey: ['admin', 'knowledge-cards'] }); setEditing(null); message.success(variables.id ? '知识卡已保存' : '知识卡草稿已创建'); } });
   if (query.isLoading) return <LoadingState />;
   if (query.error) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />;
   const cards = query.data?.data ?? [];
@@ -23,6 +24,6 @@ export function KnowledgeCardsPage() {
       { title: '状态', dataIndex: 'status', render: (value: string) => <StatusTag status={value} /> },
       { title: '操作', render: (_: unknown, record: KnowledgeCard) => <Space><Button size="small" onClick={() => setEditing(record)}>编辑</Button>{record.status === 'draft' && <Button size="small" type="primary" onClick={() => void publish.mutateAsync(record.id)}>发布</Button>}</Space> },
     ]} />}</Card>
-    <Modal title={editing?.id ? '编辑知识卡' : '新建知识卡'} open={Boolean(editing)} onCancel={() => setEditing(null)} footer={null}><div className="form-stack"><label>名称<Input value={editing?.name} onChange={(event) => setEditing((current) => current && { ...current, name: event.target.value })} /></label><label>分类<Input value={editing?.category} onChange={(event) => setEditing((current) => current && { ...current, category: event.target.value })} /></label><Button type="primary" onClick={() => { message.info('草稿编辑界面已就绪，保存接口将在下一次迭代接入'); setEditing(null); }}>保存草稿</Button></div></Modal>
+    <Modal title={editing?.id ? '编辑知识卡' : '新建知识卡'} open={Boolean(editing)} onCancel={() => setEditing(null)} footer={null}><div className="form-stack"><label>名称<Input value={editing?.name} onChange={(event) => setEditing((current) => current && { ...current, name: event.target.value })} /></label><label>分类<Input value={editing?.category} onChange={(event) => setEditing((current) => current && { ...current, category: event.target.value })} /></label><Button type="primary" loading={save.isPending} onClick={() => { if (!editing) return; if (!editing.name.trim() || !editing.category.trim()) { message.error('名称和分类不能为空'); return; } const card = { cardKey: editing.cardKey || `admin-${Date.now()}`, name: editing.name, category: editing.category, tags: editing.tags ?? [], problemSignals: editing.problemSignals ?? [], variables: {}, diagnosticQuestions: editing.diagnosticQuestions ?? [], candidateActions: editing.candidateActions ?? [], stopDoing: editing.stopDoing ?? [], reviewQuestions: editing.reviewQuestions ?? [] }; save.mutate({ id: editing.id || null, card }); }}>保存草稿</Button></div></Modal>
   </div>;
 }

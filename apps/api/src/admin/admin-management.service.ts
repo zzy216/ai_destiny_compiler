@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { FindOptionsWhere, Repository } from 'typeorm';
 
 import { AgentRun, CoachConfig, KnowledgeCard } from '../database/entities';
+import { contractNotImplemented } from '../common/contract-not-implemented';
 import type {
   CreateCoachConfigRequestDto,
   CreateKnowledgeCardRequestDto,
@@ -32,17 +33,17 @@ type AdminActor = string;
 @Injectable()
 export class AdminManagementService {
   constructor(
-    @InjectRepository(CoachConfig)
-    private readonly coachConfigs: Repository<CoachConfig>,
-    @InjectRepository(KnowledgeCard)
-    private readonly knowledgeCards: Repository<KnowledgeCard>,
-    @InjectRepository(AgentRun)
-    private readonly agentRuns: Repository<AgentRun>,
+    @Optional() @InjectRepository(CoachConfig)
+    private readonly coachConfigs?: Repository<CoachConfig>,
+    @Optional() @InjectRepository(KnowledgeCard)
+    private readonly knowledgeCards?: Repository<KnowledgeCard>,
+    @Optional() @InjectRepository(AgentRun)
+    private readonly agentRuns?: Repository<AgentRun>,
   ) {}
 
   async listCoachConfigs(query: AdminPagination = {}): Promise<AdminPage<Record<string, unknown>>> {
     const pagination = this.pagination(query);
-    const [rows, total] = await this.coachConfigs.findAndCount({
+    const [rows, total] = await this.coachRepository().findAndCount({
       where: this.contentWhere(query),
       order: { version: 'DESC' },
       skip: pagination.skip,
@@ -52,14 +53,14 @@ export class AdminManagementService {
   }
 
   async getCoachConfig(id: string): Promise<Record<string, unknown>> {
-    const row = await this.coachConfigs.findOne({ where: { id } });
+    const row = await this.coachRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Coach config not found');
     return this.coachDetail(row);
   }
 
   async createCoachConfig(input: CreateCoachConfigRequestDto, actor: AdminActor): Promise<Record<string, unknown>> {
-    const latest = await this.coachConfigs.findOne({ order: { version: 'DESC' } });
-    const row = this.coachConfigs.create({
+    const latest = await this.coachRepository().findOne({ order: { version: 'DESC' } });
+    const row = this.coachRepository().create({
       id: randomUUID(),
       version: (latest?.version ?? 0) + 1,
       ...input,
@@ -67,29 +68,29 @@ export class AdminManagementService {
       createdBy: actor,
       publishedAt: null,
     } as CoachConfig);
-    return this.coachDetail(await this.coachConfigs.save(row));
+    return this.coachDetail(await this.coachRepository().save(row));
   }
 
   async updateCoachConfig(id: string, input: UpdateCoachConfigRequestDto, actor: AdminActor): Promise<Record<string, unknown>> {
-    const row = await this.coachConfigs.findOne({ where: { id } });
+    const row = await this.coachRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Coach config not found');
     if (row.status === 'published') throw new ConflictException('Published coach config is read-only');
     Object.assign(row, input, { createdBy: row.createdBy ?? actor });
-    return this.coachDetail(await this.coachConfigs.save(row));
+    return this.coachDetail(await this.coachRepository().save(row));
   }
 
   async publishCoachConfig(id: string, actor: AdminActor): Promise<Record<string, unknown>> {
-    const row = await this.coachConfigs.findOne({ where: { id } });
+    const row = await this.coachRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Coach config not found');
-    await this.coachConfigs.update({ status: 'published' }, { status: 'disabled' });
+    await this.coachRepository().update({ status: 'published' }, { status: 'disabled' });
     Object.assign(row, { status: 'published', publishedAt: new Date(), createdBy: row.createdBy ?? actor });
-    await this.coachConfigs.update(row.id, { status: row.status, publishedAt: row.publishedAt, createdBy: row.createdBy });
+    await this.coachRepository().update(row.id, { status: row.status, publishedAt: row.publishedAt, createdBy: row.createdBy });
     return this.coachDetail(row);
   }
 
   async listKnowledgeCards(query: AdminPagination = {}): Promise<AdminPage<Record<string, unknown>>> {
     const pagination = this.pagination(query);
-    const [rows, total] = await this.knowledgeCards.findAndCount({
+    const [rows, total] = await this.cardRepository().findAndCount({
       where: this.contentWhere(query),
       order: { updatedAt: 'DESC' },
       skip: pagination.skip,
@@ -99,13 +100,13 @@ export class AdminManagementService {
   }
 
   async getKnowledgeCard(id: string): Promise<Record<string, unknown>> {
-    const row = await this.knowledgeCards.findOne({ where: { id } });
+    const row = await this.cardRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Knowledge card not found');
     return this.cardDetail(row);
   }
 
   async createKnowledgeCard(input: CreateKnowledgeCardRequestDto, actor: AdminActor): Promise<Record<string, unknown>> {
-    const row = this.knowledgeCards.create({
+    const row = this.cardRepository().create({
       id: randomUUID(),
       version: 1,
       ...input,
@@ -113,27 +114,27 @@ export class AdminManagementService {
       createdBy: actor,
       publishedAt: null,
     } as KnowledgeCard);
-    return this.cardDetail(await this.knowledgeCards.save(row));
+    return this.cardDetail(await this.cardRepository().save(row));
   }
 
   async updateKnowledgeCard(id: string, input: UpdateKnowledgeCardRequestDto, actor: AdminActor): Promise<Record<string, unknown>> {
-    const row = await this.knowledgeCards.findOne({ where: { id } });
+    const row = await this.cardRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Knowledge card not found');
     if (row.status === 'published') throw new ConflictException('Published knowledge card is read-only');
     Object.assign(row, input, { createdBy: row.createdBy ?? actor });
-    return this.cardDetail(await this.knowledgeCards.save(row));
+    return this.cardDetail(await this.cardRepository().save(row));
   }
 
   async publishKnowledgeCard(id: string, actor: AdminActor): Promise<Record<string, unknown>> {
-    const row = await this.knowledgeCards.findOne({ where: { id } });
+    const row = await this.cardRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Knowledge card not found');
     Object.assign(row, { status: 'published', publishedAt: new Date(), createdBy: row.createdBy ?? actor });
-    return this.cardDetail(await this.knowledgeCards.save(row));
+    return this.cardDetail(await this.cardRepository().save(row));
   }
 
   async listAgentRuns(query: AdminPagination = {}): Promise<AdminPage<Record<string, unknown>>> {
     const pagination = this.pagination(query);
-    const [rows, total] = await this.agentRuns.findAndCount({
+    const [rows, total] = await this.runRepository().findAndCount({
       where: this.contentWhere(query),
       order: { startedAt: 'DESC' },
       skip: pagination.skip,
@@ -143,7 +144,7 @@ export class AdminManagementService {
   }
 
   async getAgentRun(id: string): Promise<Record<string, unknown>> {
-    const row = await this.agentRuns.findOne({ where: { id } });
+    const row = await this.runRepository().findOne({ where: { id } });
     if (!row) throw new NotFoundException('Agent run not found');
     return this.runSummary(row);
   }
@@ -153,6 +154,21 @@ export class AdminManagementService {
     if (query.status) where.status = query.status;
     if (query.category) where.category = query.category;
     return where as FindOptionsWhere<CoachConfig | KnowledgeCard | AgentRun>;
+  }
+
+  private coachRepository(): Repository<CoachConfig> {
+    if (!this.coachConfigs) return contractNotImplemented();
+    return this.coachConfigs;
+  }
+
+  private cardRepository(): Repository<KnowledgeCard> {
+    if (!this.knowledgeCards) return contractNotImplemented();
+    return this.knowledgeCards;
+  }
+
+  private runRepository(): Repository<AgentRun> {
+    if (!this.agentRuns) return contractNotImplemented();
+    return this.agentRuns;
   }
 
   private pagination(query: AdminPagination): { page: number; perPage: number; skip: number } {

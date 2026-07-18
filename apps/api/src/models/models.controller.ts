@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -20,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
+import { DevelopmentAdminGuard } from '../admin/development-admin.guard';
 import {
   CreateAdminModelRequestDto,
   CreateCustomModelRequestDto,
@@ -131,6 +133,7 @@ export class CustomModelsController {
 
 @ApiTags('Admin Models')
 @ApiBearerAuth('bearer')
+@UseGuards(DevelopmentAdminGuard)
 @Controller('v1/admin/models')
 export class AdminModelsController {
   constructor(private readonly modelsService: ModelsService) {}

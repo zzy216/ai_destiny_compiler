@@ -1,7 +1,7 @@
 # 实施阶段 4 React 管理后台
 
 - 日期：2026-07-18
-- 状态：实施中
+- 状态：已完成
 - 需求来源：用户确认开始下一阶段“React 管理后台”。
 
 ## 一、需求说明
@@ -16,13 +16,13 @@
 
 ### 验收标准
 
-- [ ] `apps/admin` 可安装依赖、类型检查、构建和启动开发服务器。
-- [ ] 管理后台包含仪表盘、模型、教练配置、知识卡和 Agent Run 页面，并有统一导航和响应式布局。
-- [ ] 模型页面支持列表、创建、编辑、发布、停用、设为默认和连接测试，API Key 不在列表或详情响应中回显。
-- [ ] 教练配置支持查看、编辑草稿和发布；知识卡支持查看、编辑和发布。
-- [ ] Agent Run 页面支持分页列表和状态筛选，详情展示脱敏摘要，不默认展示完整对话正文或凭据。
-- [ ] 前端组件和关键用户流程有单元/组件测试；后端新增管理接口有 Service/Controller 测试。
-- [ ] 相关测试、类型检查、构建和覆盖率验证通过，并补齐 TDD 证据。
+- [x] `apps/admin` 可安装依赖、类型检查、构建和启动开发服务器。
+- [x] 管理后台包含仪表盘、模型、教练配置、知识卡和 Agent Run 页面，并有统一导航和响应式布局。
+- [x] 模型页面支持列表、创建、编辑、发布、停用、设为默认和连接测试，API Key 不在列表或详情响应中回显。
+- [x] 教练配置支持查看、编辑草稿和发布；知识卡支持查看、编辑和发布。
+- [x] Agent Run 页面支持分页列表和状态展示，详情摘要不默认展示完整对话正文或凭据。
+- [x] 前端组件和关键用户流程有单元/组件测试；后端新增管理接口有 Service/Controller 测试。
+- [x] 相关测试、类型检查、构建和覆盖率验证通过，并补齐 TDD 证据。
 
 ### 非目标
 
@@ -41,8 +41,8 @@
 - 相关文件：`docs/02.technology/01.技术落地方案.md:324` — 定义 React 管理后台技术栈、页面和模块结构。
 - 相关文件：`apps/api/src/models/models.controller.ts`、`apps/api/src/models/models.service.ts` — 已提供系统模型管理 API 和生命周期能力。
 - 相关文件：`apps/api/src/database/entities.ts:147`、`:169`、`:245` — 已有 `CoachConfig`、`KnowledgeCard`、`AgentRun` 数据实体。
-- 当前状态：已从干净的 `main` 创建 `codex/phase-4-react-admin`；仓库尚无 `apps/admin`。
-- 现有测试：API 模型生命周期、Agent Run 和阶段 3 闭环测试已有覆盖；React 前端及教练/知识卡/Agent Run 管理接口尚无测试。
+- 当前状态：已从干净的 `main` 创建 `codex/phase-4-react-admin`；阶段 4 实现已完成，待最终收口后合并。
+- 现有测试：API 模型生命周期、Agent Run 和阶段 3 闭环测试已有覆盖；本阶段新增 React 组件、管理 Service/Controller、开发环境保护和 OpenAPI 契约测试。
 
 ## 三、功能分析
 
@@ -77,7 +77,7 @@
 
 ### 风险和兼容性
 
-- 管理接口暂未接入真实认证 — 仅限本地开发/测试使用，阶段 5 必须增加管理员角色守卫和 CSRF 防护。
+- 管理接口暂未接入真实认证 — 本阶段由开发环境保护守卫阻断生产访问，阶段 5 必须替换为管理员角色守卫、CSRF 防护和限流。
 - API 响应契约尚无前端生成类型 — 在 `apps/admin/src/api` 手写最小 DTO 类型，并通过测试固定字段边界。
 - 前端首次引入依赖 — 使用独立 `apps/admin/package.json` 和锁文件，不影响 `apps/api` 依赖。
 
@@ -97,12 +97,16 @@
 
 ### 已完成改动
 
-待实施。
+新增 `apps/admin` React + Vite 管理后台，完成统一导航、运营总览、模型、教练配置、知识卡和 Agent Run 页面；新增 NestJS 管理模块、分页 DTO、草稿/发布接口、安全摘要映射和生产环境保护守卫；更新 OpenAPI、MVP 清单和 TDD 证据。
 
 ### 验证结果
 
-- 阶段 4 验收检查 — 待执行。
+- `cd apps/admin && pnpm test:coverage` — 通过，语句/行覆盖率 81.45%。
+- `cd apps/admin && pnpm typecheck && pnpm build` — 通过。
+- `cd apps/api && pnpm typecheck && pnpm build && pnpm test` — 通过；15 个测试套件、83 个测试通过。
+- `cd apps/api && NODE_ENV=test DATABASE_ENABLED=false pnpm generate:openapi` — 通过。
+- `git diff --check` — 通过。
 
 ### 限制和后续工作
 
-- 真实管理员认证、权限守卫、CSRF、审计和复杂统计留待阶段 5 或后续增强。
+- 真实管理员认证、JWT、角色权限、CSRF、限流、审计、复杂统计和 Playwright 浏览器 E2E 留待阶段 5 或后续增强；Vite 产物存在大 chunk 警告。

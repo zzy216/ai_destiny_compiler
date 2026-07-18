@@ -1,7 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
 import { DEVELOPMENT_ADMIN_ID } from '../models/models.service';
 import {
   AdminPaginationQueryDto,
@@ -11,10 +10,11 @@ import {
   UpdateKnowledgeCardRequestDto,
 } from './admin-management.dto';
 import { AdminManagementService } from './admin-management.service';
+import { DevelopmentAdminGuard } from './development-admin.guard';
 
 @ApiTags('Admin Management')
 @ApiBearerAuth('bearer')
-@ApiProtectedErrorResponses()
+@UseGuards(DevelopmentAdminGuard)
 @Controller('v1/admin')
 export class AdminManagementController {
   constructor(private readonly admin: AdminManagementService) {}

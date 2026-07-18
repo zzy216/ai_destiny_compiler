@@ -1990,6 +1990,458 @@
           "Conversations"
         ]
       }
+    },
+    "/api/v1/admin/coach-configs": {
+      "get": {
+        "operationId": "AdminManagementController_listCoachConfigs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coach config list"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      },
+      "post": {
+        "operationId": "AdminManagementController_createCoachConfig",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCoachConfigRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/coach-configs/{id}": {
+      "get": {
+        "operationId": "AdminManagementController_getCoachConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminManagementController_updateCoachConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoachConfigRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/coach-configs/{id}/publish": {
+      "post": {
+        "operationId": "AdminManagementController_publishCoachConfig",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/knowledge-cards": {
+      "get": {
+        "operationId": "AdminManagementController_listKnowledgeCards",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      },
+      "post": {
+        "operationId": "AdminManagementController_createKnowledgeCard",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKnowledgeCardRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/knowledge-cards/{id}": {
+      "get": {
+        "operationId": "AdminManagementController_getKnowledgeCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      },
+      "patch": {
+        "operationId": "AdminManagementController_updateKnowledgeCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateKnowledgeCardRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/knowledge-cards/{id}/publish": {
+      "post": {
+        "operationId": "AdminManagementController_publishKnowledgeCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/agent-runs": {
+      "get": {
+        "operationId": "AdminManagementController_listAgentRuns",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "published",
+                "disabled"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
+    },
+    "/api/v1/admin/agent-runs/{id}": {
+      "get": {
+        "operationId": "AdminManagementController_getAgentRun",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Admin Management"
+        ]
+      }
     }
   },
   "info": {
@@ -3150,6 +3602,227 @@
           "content",
           "idempotencyKey"
         ]
+      },
+      "CreateCoachConfigRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "roleDefinition": {
+            "type": "string"
+          },
+          "productGoal": {
+            "type": "string"
+          },
+          "systemPrompt": {
+            "type": "string"
+          },
+          "conversationRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "actionRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "prohibitedContent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "safetyRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "defaultModelConfigId": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name",
+          "roleDefinition",
+          "productGoal",
+          "systemPrompt",
+          "conversationRules",
+          "actionRules",
+          "prohibitedContent",
+          "safetyRules",
+          "outputSchema"
+        ]
+      },
+      "UpdateCoachConfigRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "roleDefinition": {
+            "type": "string"
+          },
+          "productGoal": {
+            "type": "string"
+          },
+          "systemPrompt": {
+            "type": "string"
+          },
+          "conversationRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "actionRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "prohibitedContent": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "safetyRules": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "outputSchema": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "defaultModelConfigId": {
+            "type": "object",
+            "nullable": true
+          }
+        }
+      },
+      "CreateKnowledgeCardRequestDto": {
+        "type": "object",
+        "properties": {
+          "cardKey": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "problemSignals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "diagnosticQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "candidateActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stopDoing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reviewQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "cardKey",
+          "name",
+          "category",
+          "tags",
+          "problemSignals",
+          "variables",
+          "diagnosticQuestions",
+          "candidateActions",
+          "stopDoing",
+          "reviewQuestions"
+        ]
+      },
+      "UpdateKnowledgeCardRequestDto": {
+        "type": "object",
+        "properties": {
+          "cardKey": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "problemSignals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "diagnosticQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "candidateActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stopDoing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reviewQuestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       }
     }
   }
