@@ -15,6 +15,10 @@ export interface ValidatedEnvironment {
     logging: boolean;
   };
   modelCredentialKeyVersion: number;
+  auth: {
+    accessTokenTtlSeconds: number;
+    refreshTokenTtlDays: number;
+  };
 }
 
 export class EnvironmentValidationError extends Error {
@@ -65,6 +69,20 @@ function validateBase64Key(value: string | undefined, name: string, errors: stri
   }
 }
 
+function validatePositiveInteger(
+  value: string | undefined,
+  name: string,
+  errors: string[],
+  fallback: number,
+): number {
+  if (value === undefined || value === '') return fallback;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    errors.push(`${name} must be a positive integer`);
+  }
+  return parsed;
+}
+
 export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): ValidatedEnvironment {
   const errors: string[] = [];
   const nodeEnv = env.NODE_ENV ?? 'development';
@@ -96,6 +114,18 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): Valid
   if (!Number.isInteger(modelCredentialKeyVersion) || modelCredentialKeyVersion < 1 || modelCredentialKeyVersion > 32767) {
     errors.push('MODEL_CREDENTIAL_KEY_VERSION must be an integer between 1 and 32767');
   }
+  const accessTokenTtlSeconds = validatePositiveInteger(
+    env.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+    'AUTH_ACCESS_TOKEN_TTL_SECONDS',
+    errors,
+    900,
+  );
+  const refreshTokenTtlDays = validatePositiveInteger(
+    env.AUTH_REFRESH_TOKEN_TTL_DAYS,
+    'AUTH_REFRESH_TOKEN_TTL_DAYS',
+    errors,
+    30,
+  );
 
   if (databaseEnabled) {
     required(database.host, 'DB_HOST', errors);
@@ -105,11 +135,28 @@ export function validateEnvironment(env: NodeJS.ProcessEnv = process.env): Valid
       errors.push('DB_PASSWORD must be set to a non-placeholder value');
     }
     validateBase64Key(env.MODEL_CREDENTIAL_MASTER_KEY, 'MODEL_CREDENTIAL_MASTER_KEY', errors);
+    validateBase64Key(env.AUTH_ACCESS_TOKEN_SECRET, 'AUTH_ACCESS_TOKEN_SECRET', errors);
+    validateBase64Key(env.TOKEN_HASH_KEY, 'TOKEN_HASH_KEY', errors);
+    if (
+      env.MODEL_CREDENTIAL_MASTER_KEY &&
+      (env.MODEL_CREDENTIAL_MASTER_KEY === env.AUTH_ACCESS_TOKEN_SECRET ||
+        env.MODEL_CREDENTIAL_MASTER_KEY === env.TOKEN_HASH_KEY ||
+        env.AUTH_ACCESS_TOKEN_SECRET === env.TOKEN_HASH_KEY)
+    ) {
+      errors.push('MODEL_CREDENTIAL_MASTER_KEY, AUTH_ACCESS_TOKEN_SECRET, and TOKEN_HASH_KEY must be different');
+    }
   }
 
   if (errors.length > 0) {
     throw new EnvironmentValidationError(errors);
   }
 
-  return { nodeEnv: normalizedNodeEnv, port, databaseEnabled, database, modelCredentialKeyVersion };
+  return {
+    nodeEnv: normalizedNodeEnv,
+    port,
+    databaseEnabled,
+    database,
+    modelCredentialKeyVersion,
+    auth: { accessTokenTtlSeconds, refreshTokenTtlDays },
+  };
 }

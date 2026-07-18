@@ -1,7 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
-import { DEVELOPMENT_ADMIN_ID } from '../models/models.service';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth-context';
+import { AdminRoleGuard, AuthGuard } from '../auth/auth.guards';
 import {
   AdminPaginationQueryDto,
   CreateCoachConfigRequestDto,
@@ -10,11 +11,10 @@ import {
   UpdateKnowledgeCardRequestDto,
 } from './admin-management.dto';
 import { AdminManagementService } from './admin-management.service';
-import { DevelopmentAdminGuard } from './development-admin.guard';
 
 @ApiTags('Admin Management')
 @ApiBearerAuth('bearer')
-@UseGuards(DevelopmentAdminGuard)
+@UseGuards(AuthGuard, AdminRoleGuard)
 @Controller('v1/admin')
 export class AdminManagementController {
   constructor(private readonly admin: AdminManagementService) {}
@@ -31,18 +31,28 @@ export class AdminManagementController {
   }
 
   @Post('coach-configs')
-  async createCoachConfig(@Body() input: CreateCoachConfigRequestDto) {
-    return { data: await this.admin.createCoachConfig(input, DEVELOPMENT_ADMIN_ID) };
+  async createCoachConfig(
+    @Body() input: CreateCoachConfigRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.createCoachConfig(input, user.id) };
   }
 
   @Patch('coach-configs/:id')
-  async updateCoachConfig(@Param('id') id: string, @Body() input: UpdateCoachConfigRequestDto) {
-    return { data: await this.admin.updateCoachConfig(id, input, DEVELOPMENT_ADMIN_ID) };
+  async updateCoachConfig(
+    @Param('id') id: string,
+    @Body() input: UpdateCoachConfigRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.updateCoachConfig(id, input, user.id) };
   }
 
   @Post('coach-configs/:id/publish')
-  async publishCoachConfig(@Param('id') id: string) {
-    return { data: await this.admin.publishCoachConfig(id, DEVELOPMENT_ADMIN_ID) };
+  async publishCoachConfig(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.publishCoachConfig(id, user.id) };
   }
 
   @Get('knowledge-cards')
@@ -56,18 +66,28 @@ export class AdminManagementController {
   }
 
   @Post('knowledge-cards')
-  async createKnowledgeCard(@Body() input: CreateKnowledgeCardRequestDto) {
-    return { data: await this.admin.createKnowledgeCard(input, DEVELOPMENT_ADMIN_ID) };
+  async createKnowledgeCard(
+    @Body() input: CreateKnowledgeCardRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.createKnowledgeCard(input, user.id) };
   }
 
   @Patch('knowledge-cards/:id')
-  async updateKnowledgeCard(@Param('id') id: string, @Body() input: UpdateKnowledgeCardRequestDto) {
-    return { data: await this.admin.updateKnowledgeCard(id, input, DEVELOPMENT_ADMIN_ID) };
+  async updateKnowledgeCard(
+    @Param('id') id: string,
+    @Body() input: UpdateKnowledgeCardRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.updateKnowledgeCard(id, input, user.id) };
   }
 
   @Post('knowledge-cards/:id/publish')
-  async publishKnowledgeCard(@Param('id') id: string) {
-    return { data: await this.admin.publishKnowledgeCard(id, DEVELOPMENT_ADMIN_ID) };
+  async publishKnowledgeCard(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return { data: await this.admin.publishKnowledgeCard(id, user.id) };
   }
 
   @Get('agent-runs')

@@ -55,6 +55,8 @@ describe('foundation engineering', () => {
           DB_SSL: 'true',
           DB_LOGGING: 'false',
           MODEL_CREDENTIAL_MASTER_KEY: Buffer.alloc(32, 9).toString('base64'),
+          AUTH_ACCESS_TOKEN_SECRET: Buffer.alloc(32, 10).toString('base64'),
+          TOKEN_HASH_KEY: Buffer.alloc(32, 11).toString('base64'),
           MODEL_CREDENTIAL_KEY_VERSION: '4',
         }),
       ).toMatchObject({

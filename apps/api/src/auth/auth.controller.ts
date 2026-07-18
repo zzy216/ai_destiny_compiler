@@ -4,6 +4,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -17,7 +18,8 @@ import {
   ApiProtectedErrorResponses,
   ApiValidationErrorResponses,
 } from '../common/api-error-responses.decorator';
-import { contractNotImplemented } from '../common/contract-not-implemented';
+import { CurrentUser, type AuthenticatedUser } from './auth-context';
+import { AuthGuard, FixedWindowRateLimitGuard } from './auth.guards';
 import {
   AuthSessionResponseDto,
   ChangePasswordRequestDto,
@@ -27,34 +29,40 @@ import {
   RefreshTokenRequestDto,
   RegisterRequestDto,
 } from './auth.dto';
+import { AuthService } from './auth.service';
 
 @ApiTags('Auth')
 @Controller('v1/auth')
 export class AuthController {
+  constructor(private readonly auth: AuthService) {}
+
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(FixedWindowRateLimitGuard)
   @ApiOperation({ summary: '使用邮箱或用户名登录' })
   @ApiOkResponse({ type: AuthSessionResponseDto })
   @ApiValidationErrorResponses()
-  login(@Body() _request: LoginRequestDto): never {
-    return contractNotImplemented();
+  async login(@Body() request: LoginRequestDto): Promise<AuthSessionResponseDto> {
+    return { data: await this.auth.login(request) };
   }
 
   @Post('register')
+  @UseGuards(FixedWindowRateLimitGuard)
   @ApiOperation({ summary: '使用一次性邀请码注册' })
   @ApiCreatedResponse({ type: AuthSessionResponseDto })
   @ApiValidationErrorResponses()
-  register(@Body() _request: RegisterRequestDto): never {
-    return contractNotImplemented();
+  async register(@Body() request: RegisterRequestDto): Promise<AuthSessionResponseDto> {
+    return { data: await this.auth.register(request) };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(FixedWindowRateLimitGuard)
   @ApiOperation({ summary: '轮换 Refresh Token 并签发新会话凭据' })
   @ApiOkResponse({ type: AuthSessionResponseDto })
   @ApiValidationErrorResponses()
-  refresh(@Body() _request: RefreshTokenRequestDto): never {
-    return contractNotImplemented();
+  async refresh(@Body() request: RefreshTokenRequestDto): Promise<AuthSessionResponseDto> {
+    return { data: await this.auth.refresh(request) };
   }
 
   @Post('logout')
@@ -62,17 +70,21 @@ export class AuthController {
   @ApiOperation({ summary: '撤销当前设备会话' })
   @ApiOkResponse({ type: EmptyResponseDto })
   @ApiValidationErrorResponses()
-  logout(@Body() _request: LogoutRequestDto): never {
-    return contractNotImplemented();
+  async logout(@Body() request: LogoutRequestDto): Promise<EmptyResponseDto> {
+    return { data: await this.auth.logout(request) };
   }
 
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(FixedWindowRateLimitGuard, AuthGuard)
   @ApiBearerAuth('bearer')
   @ApiOperation({ summary: '修改密码并使既有会话失效' })
   @ApiOkResponse({ type: EmptyResponseDto })
   @ApiProtectedErrorResponses()
-  changePassword(@Body() _request: ChangePasswordRequestDto): never {
-    return contractNotImplemented();
+  async changePassword(
+    @Body() request: ChangePasswordRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<EmptyResponseDto> {
+    return { data: await this.auth.changePassword(user.id, request) };
   }
 }

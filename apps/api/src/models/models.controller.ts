@@ -21,7 +21,8 @@ import {
 } from '@nestjs/swagger';
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
-import { DevelopmentAdminGuard } from '../admin/development-admin.guard';
+import { AdminRoleGuard, AuthGuard } from '../auth/auth.guards';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth-context';
 import {
   CreateAdminModelRequestDto,
   CreateCustomModelRequestDto,
@@ -33,13 +34,12 @@ import {
   UpdateCustomModelRequestDto,
 } from './models.dto';
 import {
-  DEVELOPMENT_ADMIN_ID,
-  DEVELOPMENT_USER_ID,
   ModelsService,
 } from './models.service';
 
 @ApiTags('Models')
 @ApiBearerAuth('bearer')
+@UseGuards(AuthGuard)
 @Controller('v1/models')
 export class ModelsController {
   constructor(private readonly modelsService: ModelsService) {}
@@ -48,13 +48,17 @@ export class ModelsController {
   @ApiOperation({ summary: '列出当前用户可用于新会话的模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
   @ApiProtectedErrorResponses()
-  list(@Query() query: PaginationQueryDto): Promise<ModelListResponseDto> {
-    return this.modelsService.listAvailableModels(query, DEVELOPMENT_USER_ID);
+  list(
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ModelListResponseDto> {
+    return this.modelsService.listAvailableModels(query, user.id);
   }
 }
 
 @ApiTags('Custom Models')
 @ApiBearerAuth('bearer')
+@UseGuards(AuthGuard)
 @Controller('v1/custom-models')
 export class CustomModelsController {
   constructor(private readonly modelsService: ModelsService) {}
@@ -63,16 +67,22 @@ export class CustomModelsController {
   @ApiOperation({ summary: '列出当前用户自己的自定义模型' })
   @ApiOkResponse({ type: ModelListResponseDto })
   @ApiProtectedErrorResponses()
-  list(@Query() query: PaginationQueryDto): Promise<ModelListResponseDto> {
-    return this.modelsService.listCustomModels(query, DEVELOPMENT_USER_ID);
+  list(
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ModelListResponseDto> {
+    return this.modelsService.listCustomModels(query, user.id);
   }
 
   @Post()
   @ApiOperation({ summary: '创建用户自定义 OpenAI-compatible 模型' })
   @ApiCreatedResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  async create(@Body() request: CreateCustomModelRequestDto): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.createCustomModel(request, DEVELOPMENT_USER_ID) };
+  async create(
+    @Body() request: CreateCustomModelRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.createCustomModel(request, user.id) };
   }
 
   @Patch(':id')
@@ -82,8 +92,9 @@ export class CustomModelsController {
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() request: UpdateCustomModelRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.updateCustomModel(id, request, DEVELOPMENT_USER_ID) };
+    return { data: await this.modelsService.updateCustomModel(id, request, user.id) };
   }
 
   @Post(':id/publish')
@@ -93,8 +104,9 @@ export class CustomModelsController {
   @ApiProtectedErrorResponses()
   async publish(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.publishModel(id, DEVELOPMENT_USER_ID, 'user') };
+    return { data: await this.modelsService.publishModel(id, user.id, 'user') };
   }
 
   @Post(':id/disable')
@@ -104,8 +116,9 @@ export class CustomModelsController {
   @ApiProtectedErrorResponses()
   async disable(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.disableCustomModel(id, DEVELOPMENT_USER_ID) };
+    return { data: await this.modelsService.disableCustomModel(id, user.id) };
   }
 
   @Delete(':id')
@@ -115,8 +128,9 @@ export class CustomModelsController {
   @ApiProtectedErrorResponses()
   async remove(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.deleteCustomModel(id, DEVELOPMENT_USER_ID) };
+    return { data: await this.modelsService.deleteCustomModel(id, user.id) };
   }
 
   @Post(':id/test')
@@ -126,14 +140,15 @@ export class CustomModelsController {
   @ApiProtectedErrorResponses()
   async testConnection(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelConnectionTestResponseDto> {
-    return { data: await this.modelsService.testConnection(id) };
+    return { data: await this.modelsService.testConnection(id, user.id, 'user') };
   }
 }
 
 @ApiTags('Admin Models')
 @ApiBearerAuth('bearer')
-@UseGuards(DevelopmentAdminGuard)
+@UseGuards(AuthGuard, AdminRoleGuard)
 @Controller('v1/admin/models')
 export class AdminModelsController {
   constructor(private readonly modelsService: ModelsService) {}
@@ -150,8 +165,11 @@ export class AdminModelsController {
   @ApiOperation({ summary: '管理员创建系统模型草稿' })
   @ApiCreatedResponse({ type: ModelResponseDto })
   @ApiProtectedErrorResponses()
-  async create(@Body() request: CreateAdminModelRequestDto): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.createAdminModel(request, DEVELOPMENT_ADMIN_ID) };
+  async create(
+    @Body() request: CreateAdminModelRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ModelResponseDto> {
+    return { data: await this.modelsService.createAdminModel(request, user.id) };
   }
 
   @Get(':id')
@@ -171,8 +189,9 @@ export class AdminModelsController {
   async update(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() request: UpdateAdminModelRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.updateAdminModel(id, request, DEVELOPMENT_ADMIN_ID) };
+    return { data: await this.modelsService.updateAdminModel(id, request, user.id) };
   }
 
   @Delete(':id')
@@ -182,8 +201,9 @@ export class AdminModelsController {
   @ApiProtectedErrorResponses()
   async remove(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.deleteAdminModel(id, DEVELOPMENT_ADMIN_ID) };
+    return { data: await this.modelsService.deleteAdminModel(id, user.id) };
   }
 
   @Post(':id/publish')
@@ -193,8 +213,9 @@ export class AdminModelsController {
   @ApiProtectedErrorResponses()
   async publish(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.publishModel(id, DEVELOPMENT_ADMIN_ID) };
+    return { data: await this.modelsService.publishModel(id, user.id) };
   }
 
   @Post(':id/disable')
@@ -204,8 +225,9 @@ export class AdminModelsController {
   @ApiProtectedErrorResponses()
   async disable(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.disableModel(id, DEVELOPMENT_ADMIN_ID, 'system') };
+    return { data: await this.modelsService.disableModel(id, user.id, 'system') };
   }
 
   @Post(':id/test')
@@ -215,8 +237,9 @@ export class AdminModelsController {
   @ApiProtectedErrorResponses()
   async testConnection(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() _user: AuthenticatedUser,
   ): Promise<ModelConnectionTestResponseDto> {
-    return { data: await this.modelsService.testConnection(id) };
+    return { data: await this.modelsService.testConnection(id, undefined, 'system') };
   }
 
   @Post(':id/set-default')
@@ -226,7 +249,8 @@ export class AdminModelsController {
   @ApiProtectedErrorResponses()
   async setDefault(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<ModelResponseDto> {
-    return { data: await this.modelsService.setDefaultModel(id, DEVELOPMENT_ADMIN_ID) };
+    return { data: await this.modelsService.setDefaultModel(id, user.id) };
   }
 }

@@ -151,35 +151,27 @@ describe('MVP API contract', () => {
     );
   });
 
-  it('requires a model selection when creating a conversation', async () => {
+  it('requires authentication before validating protected conversation requests', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/conversations')
       .send({ title: '职业选择' })
-      .expect(400);
+      .expect(401);
 
-    expect(response.body.error.details).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'modelConfigId' }),
-      ]),
-    );
+    expect(response.body.error).toMatchObject({ code: 'request_failed' });
   });
 
-  it('requires a UUID idempotency key when sending a message', async () => {
+  it('requires authentication before accepting protected message requests', async () => {
     const response = await request(app.getHttpServer())
       .post(
         '/api/v1/conversations/6cdbbfa1-7674-4b53-a2d9-a38af20aa1b0/messages',
       )
       .send({ content: '我应该先做什么？', idempotencyKey: 'retry-1' })
-      .expect(400);
+      .expect(401);
 
-    expect(response.body.error.details).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'idempotencyKey' }),
-      ]),
-    );
+    expect(response.body.error).toMatchObject({ code: 'request_failed' });
   });
 
-  it('rejects insecure custom model base URLs at the DTO boundary', async () => {
+  it('requires authentication before validating protected custom model requests', async () => {
     const response = await request(app.getHttpServer())
       .post('/api/v1/custom-models')
       .send({
@@ -189,63 +181,18 @@ describe('MVP API contract', () => {
         modelName: 'example-model',
         apiKey: 'secret-value',
       })
-      .expect(400);
+      .expect(401);
 
-    expect(response.body.error.details).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'baseUrl' }),
-      ]),
-    );
+    expect(response.body.error).toMatchObject({ code: 'request_failed' });
   });
 
-  it('routes valid requests to every contract placeholder', async () => {
+  it('requires authentication for protected model and admin paths', async () => {
     const resourceId = '6cdbbfa1-7674-4b53-a2d9-a38af20aa1b0';
-    const idempotencyKey = '83b5f9f2-f829-4a8e-b82b-9d508973f220';
-    const refreshToken = 'r'.repeat(32);
-    const password = 'correct-horse-battery-staple';
     const calls: Array<{
       method: 'get' | 'post' | 'patch' | 'delete';
       path: string;
       body?: Record<string, unknown>;
     }> = [
-      {
-        method: 'post',
-        path: '/api/v1/auth/login',
-        body: { identifier: 'user@example.com', password },
-      },
-      {
-        method: 'post',
-        path: '/api/v1/auth/register',
-        body: {
-          invitationCode: 'invite-code-2026',
-          email: 'user@example.com',
-          password,
-        },
-      },
-      {
-        method: 'post',
-        path: '/api/v1/auth/register',
-        body: {
-          invitationCode: 'invite-code-2026',
-          username: 'destiny_user',
-          password,
-        },
-      },
-      {
-        method: 'post',
-        path: '/api/v1/auth/refresh',
-        body: { refreshToken },
-      },
-      {
-        method: 'post',
-        path: '/api/v1/auth/logout',
-        body: { refreshToken },
-      },
-      {
-        method: 'post',
-        path: '/api/v1/auth/change-password',
-        body: { currentPassword: password, newPassword: `${password}-new` },
-      },
       { method: 'get', path: '/api/v1/models?page=1&perPage=20' },
       { method: 'get', path: '/api/v1/custom-models?page=1&perPage=20' },
       {
@@ -302,10 +249,8 @@ describe('MVP API contract', () => {
         pendingRequest.send(call.body);
       }
 
-      const response = await pendingRequest.expect(501);
-      expect(response.body).toMatchObject({
-        error: { code: 'contract_not_implemented' },
-      });
+      const response = await pendingRequest.expect(401);
+      expect(response.body).toMatchObject({ error: { code: 'request_failed' } });
     }
   });
 

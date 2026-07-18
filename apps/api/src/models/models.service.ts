@@ -326,13 +326,21 @@ export class ModelsService {
     });
   }
 
-  async testConnection(modelConfigId: string): Promise<ModelConnectionResult> {
+  async testConnection(
+    modelConfigId: string,
+    userId?: string,
+    ownerType?: 'system' | 'user',
+  ): Promise<ModelConnectionResult> {
     if (!this.modelConfigs || !this.modelVersions) {
       return contractNotImplemented();
     }
 
     const modelConfig = await this.modelConfigs.findOne({
-      where: { id: modelConfigId },
+      where: ownerType === 'user'
+        ? { id: modelConfigId, ownerType: 'user', ownerUserId: userId }
+        : ownerType === 'system'
+          ? { id: modelConfigId, ownerType: 'system' }
+          : { id: modelConfigId },
     });
     if (!modelConfig || modelConfig.status === 'deleted') {
       throw new NotFoundException('Model not found');

@@ -9,6 +9,7 @@ import {
   Post,
   Res,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import {
@@ -21,7 +22,8 @@ import {
 } from '@nestjs/swagger';
 
 import { ApiProtectedErrorResponses } from '../common/api-error-responses.decorator';
-import { DEVELOPMENT_USER_ID } from '../models/models.service';
+import { CurrentUser, type AuthenticatedUser } from '../auth/auth-context';
+import { AuthGuard, FixedWindowRateLimitGuard } from '../auth/auth.guards';
 import {
   ConversationListResponseDto,
   ConversationPaginationQueryDto,
@@ -34,6 +36,7 @@ import { ConversationsService } from './conversations.service';
 
 @ApiTags('Conversations')
 @ApiBearerAuth('bearer')
+@UseGuards(AuthGuard)
 @Controller('v1/conversations')
 export class ConversationsController {
   constructor(private readonly conversations: ConversationsService) {}
@@ -45,16 +48,22 @@ export class ConversationsController {
   })
   @ApiCreatedResponse({ type: ConversationResponseDto })
   @ApiProtectedErrorResponses()
-  async create(@Body() request: CreateConversationRequestDto): Promise<ConversationResponseDto> {
-    return { data: await this.conversations.createConversation(request, DEVELOPMENT_USER_ID) as never };
+  async create(
+    @Body() request: CreateConversationRequestDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ConversationResponseDto> {
+    return { data: await this.conversations.createConversation(request, user.id) as never };
   }
 
   @Get()
   @ApiOperation({ summary: '列出当前用户的会话' })
   @ApiOkResponse({ type: ConversationListResponseDto })
   @ApiProtectedErrorResponses()
-  async list(@Query() query: ConversationPaginationQueryDto): Promise<ConversationListResponseDto> {
-    return await this.conversations.listConversations(query, DEVELOPMENT_USER_ID) as never;
+  async list(
+    @Query() query: ConversationPaginationQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<ConversationListResponseDto> {
+    return await this.conversations.listConversations(query, user.id) as never;
   }
 
   @Get(':id/messages')
@@ -64,8 +73,9 @@ export class ConversationsController {
   listMessages(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query() query: ConversationPaginationQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<MessageListResponseDto> {
-    return this.conversations.listMessages(id, query, DEVELOPMENT_USER_ID) as never;
+    return this.conversations.listMessages(id, query, user.id) as never;
   }
 
   @Post(':id/messages')
@@ -85,16 +95,18 @@ export class ConversationsController {
     },
   })
   @ApiProtectedErrorResponses()
+  @UseGuards(AuthGuard, FixedWindowRateLimitGuard)
   async sendMessage(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() request: SendMessageRequestDto,
     @Res() response: Response,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<void> {
     response.status(HttpStatus.OK);
     response.setHeader('Content-Type', 'text/event-stream');
     response.setHeader('Cache-Control', 'no-cache');
     response.setHeader('Connection', 'keep-alive');
-    for await (const event of this.conversations.streamMessage(id, request, DEVELOPMENT_USER_ID)) {
+    for await (const event of this.conversations.streamMessage(id, request, user.id)) {
       response.write(`event: ${event.event}\ndata: ${JSON.stringify(event.data)}\n\n`);
     }
     response.end();
