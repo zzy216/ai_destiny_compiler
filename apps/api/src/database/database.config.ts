@@ -2,6 +2,7 @@ import type { DataSourceOptions } from 'typeorm';
 
 import { databaseEntities } from './entities';
 import { databaseMigrations } from './migrations';
+import { SnakeNamingStrategy } from './snake-naming.strategy';
 
 function envBoolean(value: string | undefined): boolean {
   return value === 'true' || value === '1';
@@ -21,6 +22,6 @@ export const databaseOptions: DataSourceOptions = {
   migrationsTableName: 'typeorm_migrations',
   entities: databaseEntities,
   migrations: databaseMigrations,
+  namingStrategy: new SnakeNamingStrategy(),
   logging: envBoolean(process.env.DB_LOGGING),
 };
-
