@@ -293,4 +293,55 @@ describe('MVP API contract', () => {
       },
     });
   });
+
+  it('sets baseline security headers on published API documentation endpoints', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/docs-json')
+      .expect(200);
+
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');
+    expect(response.headers['referrer-policy']).toBe('no-referrer');
+  });
+
+  it('marks every protected OpenAPI operation with bearer auth', () => {
+    const document = createOpenApiDocument(app);
+    const publicOperations = new Set([
+      'GET /api/health',
+      'POST /api/v1/auth/login',
+      'POST /api/v1/auth/register',
+      'POST /api/v1/auth/refresh',
+      'POST /api/v1/auth/logout',
+    ]);
+
+    for (const [path, pathItem] of Object.entries(document.paths)) {
+      for (const method of ['get', 'post', 'patch', 'delete'] as const) {
+        const operation = pathItem[method];
+        if (!operation) continue;
+
+        const operationKey = `${method.toUpperCase()} ${path}`;
+        if (publicOperations.has(operationKey)) continue;
+
+        expect(operation.security).toEqual(
+          expect.arrayContaining([{ bearer: [] }]),
+        );
+      }
+    }
+  });
+
+  it('keeps stored secret fields out of public OpenAPI response schemas', () => {
+    const document = createOpenApiDocument(app);
+    const schemas = document.components?.schemas ?? {};
+    const responseSchemas = Object.fromEntries(
+      Object.entries(schemas).filter(([schemaName]) =>
+        /(?:Dto|ResponseDto|ListResponseDto)$/.test(schemaName) &&
+        !/(?:RequestDto)$/.test(schemaName),
+      ),
+    );
+    const serializedSchemas = JSON.stringify(responseSchemas);
+
+    expect(serializedSchemas).not.toMatch(
+      /passwordHash|refreshTokenHash|apiKeyEncrypted|apiKeyIv|apiKeyAuthTag|codeHash|tokenHashKey/,
+    );
+  });
 });
