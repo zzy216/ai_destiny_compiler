@@ -5,10 +5,14 @@ import { resolve } from 'node:path';
 
 import { NestFactory } from '@nestjs/core';
 
-import { AppModule } from './app.module';
-import { configureApplication, createOpenApiDocument } from './bootstrap';
-
 async function generateOpenApi(): Promise<void> {
+  process.env.NODE_ENV ??= 'test';
+  process.env.DATABASE_ENABLED ??= 'false';
+
+  const [{ AppModule }, { configureApplication, createOpenApiDocument }] = await Promise.all([
+    import('./app.module'),
+    import('./bootstrap'),
+  ]);
   const app = await NestFactory.create(AppModule, { logger: false });
   configureApplication(app);
   await app.init();

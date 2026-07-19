@@ -60,6 +60,12 @@ describe('MVP API contract', () => {
         '/api/v1/admin/agent-runs/{id}',
         '/api/v1/conversations',
         '/api/v1/conversations/{id}/messages',
+        '/api/v1/action-cards',
+        '/api/v1/action-cards/{id}',
+        '/api/v1/action-cards/{id}/execution-records',
+        '/api/v1/reviews',
+        '/api/v1/memories',
+        '/api/v1/memories/{id}',
       ]),
     );
   });
@@ -241,6 +247,27 @@ describe('MVP API contract', () => {
         method: 'post',
         path: `/api/v1/admin/models/${resourceId}/set-default`,
       },
+      { method: 'get', path: '/api/v1/action-cards?page=1&perPage=20' },
+      { method: 'get', path: `/api/v1/action-cards/${resourceId}` },
+      { method: 'get', path: `/api/v1/action-cards/${resourceId}/execution-records` },
+      {
+        method: 'post',
+        path: `/api/v1/action-cards/${resourceId}/execution-records`,
+        body: { result: 'completed' },
+      },
+      { method: 'get', path: '/api/v1/reviews?page=1&perPage=20' },
+      {
+        method: 'post',
+        path: '/api/v1/reviews',
+        body: { reviewType: 'daily', summary: '今日完成一次行动。' },
+      },
+      { method: 'get', path: '/api/v1/memories?page=1&perPage=20' },
+      {
+        method: 'post',
+        path: '/api/v1/memories',
+        body: { category: 'preference', content: '偏好早上处理深度工作' },
+      },
+      { method: 'delete', path: `/api/v1/memories/${resourceId}` },
     ];
 
     for (const call of calls) {

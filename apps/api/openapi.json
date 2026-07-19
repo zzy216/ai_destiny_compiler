@@ -1991,6 +1991,794 @@
         ]
       }
     },
+    "/api/v1/action-cards": {
+      "get": {
+        "operationId": "ActionsController_listActionCards",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "in_progress",
+                "completed",
+                "partially_completed",
+                "not_completed",
+                "abandoned"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCardListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户的行动卡",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
+    "/api/v1/action-cards/{id}": {
+      "get": {
+        "operationId": "ActionsController_getActionCard",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionCardResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "读取当前用户的行动卡详情",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
+    "/api/v1/action-cards/{id}/execution-records": {
+      "get": {
+        "operationId": "ActionsController_listExecutionRecords",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionRecordListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户行动卡的执行反馈",
+        "tags": [
+          "Actions"
+        ]
+      },
+      "post": {
+        "description": "写入反馈记录，并同步更新行动卡当前状态。",
+        "operationId": "ActionsController_submitExecutionRecord",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExecutionRecordRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutionRecordResultDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "提交行动执行反馈",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
+    "/api/v1/reviews": {
+      "get": {
+        "operationId": "ActionsController_listReviews",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "reviewType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "action",
+                "daily",
+                "stage"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户的复盘",
+        "tags": [
+          "Actions"
+        ]
+      },
+      "post": {
+        "operationId": "ActionsController_createReview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建当前用户的复盘",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
+    "/api/v1/memories": {
+      "get": {
+        "operationId": "ActionsController_listMemories",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "goal",
+                "preference",
+                "constraint",
+                "pattern",
+                "context"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryListResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "列出当前用户记忆",
+        "tags": [
+          "Actions"
+        ]
+      },
+      "post": {
+        "operationId": "ActionsController_createMemory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMemoryRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "创建当前用户记忆",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
+    "/api/v1/memories/{id}": {
+      "delete": {
+        "operationId": "ActionsController_deleteMemory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": "请求字段或格式不合法",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或使用了无效身份凭据",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "当前身份无权执行该操作或访问该资源",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "请求超过限流阈值",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "删除当前用户记忆",
+        "tags": [
+          "Actions"
+        ]
+      }
+    },
     "/api/v1/admin/coach-configs": {
       "get": {
         "operationId": "AdminManagementController_listCoachConfigs",
@@ -3601,6 +4389,549 @@
         "required": [
           "content",
           "idempotencyKey"
+        ]
+      },
+      "ActionCardDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agentRunId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "goalId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string"
+          },
+          "durationMinutes": {
+            "type": "object",
+            "nullable": true
+          },
+          "deliverable": {
+            "type": "string"
+          },
+          "completionCriteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stopDoing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "partially_completed",
+              "not_completed",
+              "abandoned"
+            ]
+          },
+          "dueAt": {
+            "type": "object",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "object",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "agentRunId",
+          "isPrimary",
+          "title",
+          "deliverable",
+          "completionCriteria",
+          "stopDoing",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ActionCardListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActionCardDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ActionCardResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ActionCardDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "ExecutionRecordDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actionCardId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partially_completed",
+              "not_completed"
+            ]
+          },
+          "note": {
+            "type": "object",
+            "nullable": true
+          },
+          "obstacleType": {
+            "type": "string",
+            "enum": [
+              "direction",
+              "ability",
+              "execution",
+              "resource",
+              "timing",
+              "emotion",
+              "other"
+            ],
+            "nullable": true
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "actionCardId",
+          "result",
+          "evidence",
+          "submittedAt",
+          "createdAt"
+        ]
+      },
+      "ExecutionRecordListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExecutionRecordDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CreateExecutionRecordRequestDto": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "partially_completed",
+              "not_completed"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 4000,
+            "nullable": true
+          },
+          "obstacleType": {
+            "type": "string",
+            "enum": [
+              "direction",
+              "ability",
+              "execution",
+              "resource",
+              "timing",
+              "emotion",
+              "other"
+            ],
+            "nullable": true
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "result"
+        ]
+      },
+      "ExecutionRecordResultDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ExecutionRecordDto"
+          },
+          "actionCardStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "completed",
+              "partially_completed",
+              "not_completed",
+              "abandoned"
+            ]
+          }
+        },
+        "required": [
+          "data",
+          "actionCardStatus"
+        ]
+      },
+      "ReviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewType": {
+            "type": "string",
+            "enum": [
+              "action",
+              "daily",
+              "stage"
+            ]
+          },
+          "actionCardId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "generatedByRunId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "periodStart": {
+            "type": "object",
+            "format": "date",
+            "nullable": true
+          },
+          "periodEnd": {
+            "type": "object",
+            "format": "date",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string"
+          },
+          "progress": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "frictions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextFocus": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "reviewType",
+          "summary",
+          "progress",
+          "frictions",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ReviewListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CreateReviewRequestDto": {
+        "type": "object",
+        "properties": {
+          "reviewType": {
+            "type": "string",
+            "enum": [
+              "action",
+              "daily",
+              "stage"
+            ]
+          },
+          "actionCardId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "generatedByRunId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "periodStart": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "periodEnd": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "progress": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "frictions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "nextFocus": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          }
+        },
+        "required": [
+          "reviewType",
+          "summary"
+        ]
+      },
+      "ReviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/ReviewDto"
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "MemoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceConversationId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceMessageId": {
+            "type": "object",
+            "format": "uuid",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "goal",
+              "preference",
+              "constraint",
+              "pattern",
+              "context"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "object",
+            "nullable": true
+          },
+          "confirmedByUser": {
+            "type": "boolean"
+          },
+          "lastUsedAt": {
+            "type": "object",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "category",
+          "content",
+          "confirmedByUser",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MemoryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoryDto"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMetaDto"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "CreateMemoryRequestDto": {
+        "type": "object",
+        "properties": {
+          "sourceConversationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "sourceMessageId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "goal",
+              "preference",
+              "constraint",
+              "pattern",
+              "context"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "nullable": true
+          },
+          "confirmedByUser": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "category",
+          "content"
+        ]
+      },
+      "MemoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/MemoryDto"
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "CreateCoachConfigRequestDto": {

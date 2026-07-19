@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { ActionsModule } from './actions/actions.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminManagementModule } from './admin/admin-management.module';
 import { AgentRunsModule } from './agent-runs/agent-runs.module';
@@ -16,6 +17,7 @@ import { ModelsModule } from './models/models.module';
     AgentRunsModule,
     ModelsModule,
     ConversationsModule,
+    ActionsModule,
     AdminManagementModule,
   ],
 })
