@@ -9,6 +9,15 @@ export interface RequestLogFields {
   durationMs: number;
 }
 
+export const REQUEST_LOG_REDACT_PATHS = [
+  'req.headers.authorization',
+  'req.headers.cookie',
+  'req.headers["set-cookie"]',
+  'req.headers["x-api-key"]',
+  'req.headers["x-auth-token"]',
+  'req.headers["proxy-authorization"]',
+];
+
 export function buildRequestLog(fields: RequestLogFields): RequestLogFields {
   return {
     method: fields.method,
@@ -22,7 +31,10 @@ export function createRequestLogger(): RequestHandler {
   const level = process.env.NODE_ENV === 'test' ? 'silent' : process.env.LOG_LEVEL ?? 'info';
 
   return pinoHttp({
-    logger: pino({ level }),
+    logger: pino({
+      level,
+      redact: { paths: REQUEST_LOG_REDACT_PATHS, censor: '[Redacted]' },
+    }),
     customSuccessObject: (request, response, responseTime) =>
       buildRequestLog({
         method: request.method ?? 'UNKNOWN',
