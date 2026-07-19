@@ -4,6 +4,10 @@ import { databaseOptions } from '../src/database/database.config';
 import { databaseEntities } from '../src/database/entities';
 import { databaseMigrations } from '../src/database/migrations';
 
+function toSnakeCase(value: string): string {
+  return value.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+}
+
 describe('database contract', () => {
   it('uses PostgreSQL without synchronize and registers every core entity', () => {
     expect(databaseOptions.type).toBe('postgres');
@@ -43,5 +47,21 @@ describe('database contract', () => {
       'CreateMemories1784200000019',
       'AddPartialIndexesAndChecks1784200000020',
     ]);
+  });
+
+  it('maps entity properties to the snake_case columns created by migrations', async () => {
+    const dataSource = new DataSource({
+      ...databaseOptions,
+      entities: databaseEntities,
+      migrations: databaseMigrations,
+    });
+    await (dataSource as unknown as { buildMetadatas: () => Promise<void> }).buildMetadatas();
+
+    expect(dataSource.entityMetadatas.length).toBe(databaseEntities.length);
+    for (const metadata of dataSource.entityMetadatas) {
+      for (const column of metadata.columns) {
+        expect(column.databaseName).toBe(toSnakeCase(column.propertyName));
+      }
+    }
   });
 });
