@@ -1,7 +1,7 @@
 # 修复实体字段数据库列名映射
 
 - 日期：2026-07-19
-- 状态：实施中
+- 状态：已完成
 - 需求来源：用户要求“继续下一步”，执行内测发布数据库准备时发现真实 PostgreSQL 种子数据失败。
 
 ## 一、需求说明
@@ -16,10 +16,10 @@
 
 ### 验收标准
 
-- [ ] TypeORM 实体元数据中的 camelCase 属性映射到 snake_case 数据库列名。
-- [ ] `pnpm seed` 可在已迁移的本地开发库上完成。
-- [ ] 发布验收脚本 `./scripts/verify-release.sh` 通过。
-- [ ] 工作区不提交本地 `.env`、凭据或数据库状态。
+- [x] TypeORM 实体元数据中的 camelCase 属性映射到 snake_case 数据库列名。
+- [x] `pnpm seed` 可在已迁移的本地开发库上完成。
+- [x] 发布验收脚本 `./scripts/verify-release.sh` 通过。
+- [x] 工作区不提交本地 `.env`、凭据或数据库状态。
 
 ### 非目标
 
@@ -79,14 +79,24 @@ TypeORM Repository 仍接收实体属性名，例如 `passwordHash`；生成 SQL
 
 ### 已完成改动
 
-待回填。
+新增 `apps/api/src/database/snake-naming.strategy.ts`，通过 TypeORM naming strategy 将实体属性列名统一转换为 snake_case；在 `apps/api/src/database/database.config.ts` 接入该策略。更新 `apps/api/test/database.contract.e2e-spec.ts`，显式构建实体元数据并验证所有实体列名与迁移使用的 snake_case 约定一致。
+
+TDD 过程：先提交会失败的元数据回归测试，失败点为 `passwordHash` 映射成 `passwordHash`；接入命名策略后同一测试通过。随后使用本地 PostgreSQL 开发库验证 `migration:run`、`seed`、API 启动和关键 HTTP 冒烟。
 
 ### 验证结果
 
-- `pnpm test -- database.contract.e2e-spec.ts --runInBand` — 待执行
-- `pnpm seed` — 待执行
-- `./scripts/verify-release.sh` — 待执行
+- `pnpm test -- database.contract.e2e-spec.ts --runInBand` — 先失败后通过；失败原因为 `passwordHash` 未映射到 `password_hash`
+- `pnpm migration:show` — 通过；20 个 migration 均已应用
+- `pnpm migration:run` — 通过；无待执行 migration
+- `pnpm seed` — 通过；输出 `seed_completed`，知识卡数量 12
+- `./scripts/verify-release.sh` — 通过；API 18 个测试套件、121 个测试通过，管理后台 7 个测试文件、8 个测试通过，Flutter 4 个测试通过
+- `GET /api/health` — 通过；返回 200，数据库状态 `up`
+- `GET /api/docs-json` — 通过；返回 200
+- `POST /api/v1/auth/login` — 通过；种子普通用户可登录
+- `GET /api/v1/models` — 通过；返回 1 个已发布可选模型
+- `POST /api/v1/conversations` — 通过；可创建绑定种子模型的会话
 
 ### 限制和后续工作
 
-待回填。
+- 本地开发库为验证临时准备了应用角色、表 owner 和种子数据；这些外部状态不进入 Git。
+- 正式内测环境仍需按发布清单准备正式数据库账号、密钥、备份、Apifox 导入和部署后人工冒烟。
