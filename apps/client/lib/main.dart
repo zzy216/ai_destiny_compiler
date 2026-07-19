@@ -645,7 +645,11 @@ class AppController extends ChangeNotifier {
         } else if (event.event == 'message.completed') {
           _completeAssistant(event.data['content'] as String?);
         } else if (event.event == 'run.failed') {
-          throw ApiException(event.data['message'] as String? ?? '咨询执行失败');
+          throw ApiException(
+            event.data['errorMessage'] as String? ??
+                event.data['message'] as String? ??
+                '咨询执行失败',
+          );
         }
       }
     } catch (exception) {

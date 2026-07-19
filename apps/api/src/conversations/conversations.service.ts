@@ -241,7 +241,16 @@ export class ConversationsService {
         events: [
           startedEvent,
           { event: 'message.delta', data: { agentRunId: run.id, delta: completion.content } },
-          { event: 'message.completed', data: { agentRunId: run.id, messageId: responseMessage.id, actionCardId: actionCard.id, contentJson: diagnostic } },
+          {
+            event: 'message.completed',
+            data: {
+              agentRunId: run.id,
+              messageId: responseMessage.id,
+              actionCardId: actionCard.id,
+              content: completion.content,
+              contentJson: diagnostic,
+            },
+          },
         ],
       };
     } catch (error) {

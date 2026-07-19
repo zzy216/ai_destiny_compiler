@@ -42,6 +42,18 @@ void main() {
     expect(api.sentMessages, ['我总是在准备阶段卡住']);
   });
 
+  testWidgets('shows server failure messages when a run fails', (tester) async {
+    final api = FakeDestinyApi(failRun: true);
+    await tester.pumpWidget(DestinyCompilerApp(api: api));
+    await _login(tester);
+
+    await tester.enterText(find.byKey(const Key('questionField')), '模型失败');
+    await tester.tap(find.byKey(const Key('sendButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Model execution failed'), findsOneWidget);
+  });
+
   testWidgets('opens conversation history and loads messages', (tester) async {
     final api = FakeDestinyApi();
     await tester.pumpWidget(DestinyCompilerApp(api: api));
@@ -84,6 +96,9 @@ Future<void> _login(WidgetTester tester) async {
 }
 
 class FakeDestinyApi implements DestinyApi {
+  FakeDestinyApi({this.failRun = false});
+
+  final bool failRun;
   int loginCalls = 0;
   int listModelsCalls = 0;
   int logoutCalls = 0;
@@ -203,6 +218,13 @@ class FakeDestinyApi implements DestinyApi {
     required String idempotencyKey,
   }) async* {
     sentMessages.add(content);
+    if (failRun) {
+      yield const MessageStreamEvent(
+        event: 'run.failed',
+        data: {'errorMessage': 'Model execution failed'},
+      );
+      return;
+    }
     yield const MessageStreamEvent(
       event: 'message.delta',
       data: {'delta': '先交付一个'},

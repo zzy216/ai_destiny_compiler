@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthenticatedUser } from '../auth/auth-context';
 import { AdminRoleGuard, AuthGuard } from '../auth/auth.guards';
 import {
+  AdminAgentRunQueryDto,
   AdminPaginationQueryDto,
   CreateCoachConfigRequestDto,
   CreateKnowledgeCardRequestDto,
@@ -91,7 +92,7 @@ export class AdminManagementController {
   }
 
   @Get('agent-runs')
-  listAgentRuns(@Query() query: AdminPaginationQueryDto) {
+  listAgentRuns(@Query() query: AdminAgentRunQueryDto) {
     return this.admin.listAgentRuns(query);
   }
 

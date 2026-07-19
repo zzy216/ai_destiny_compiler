@@ -159,6 +159,10 @@ describe('ConversationsService', () => {
       'message.delta',
       'message.completed',
     ]);
+    expect(result.events.at(-1)).toMatchObject({
+      event: 'message.completed',
+      data: { content: expect.stringContaining('当前最大阻力是任务过大') },
+    });
   });
 
   it('reuses the existing run for a retried idempotency key', async () => {

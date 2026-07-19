@@ -55,26 +55,28 @@ describe('AdminManagementService', () => {
   });
 
   it('maps knowledge cards and agent runs to safe admin summaries', async () => {
+    const runFindAndCount = jest.fn().mockResolvedValue([[
+      {
+        id: 'run-1', status: 'succeeded', modelSnapshot: { modelName: 'llama3.2', apiKey: 'secret' },
+        inputTokens: 10, outputTokens: 20, durationMs: 1000, startedAt: new Date('2026-07-18T08:00:00.000Z'),
+        resultJson: { diagnosis: 'private' },
+      },
+    ], 1]);
     const service = createService({
       cards: {
         findAndCount: jest.fn().mockResolvedValue([[{ id: 'card-1', name: '目标澄清', category: '目标', status: 'published', tags: ['目标'] }], 1]),
       },
       runs: {
-        findAndCount: jest.fn().mockResolvedValue([[
-          {
-            id: 'run-1', status: 'succeeded', modelSnapshot: { modelName: 'llama3.2', apiKey: 'secret' },
-            inputTokens: 10, outputTokens: 20, durationMs: 1000, startedAt: new Date('2026-07-18T08:00:00.000Z'),
-            resultJson: { diagnosis: 'private' },
-          },
-        ], 1]),
+        findAndCount: runFindAndCount,
       },
     });
 
     const cards = await service.listKnowledgeCards({ page: 1, perPage: 20 });
-    const runs = await service.listAgentRuns({ page: 1, perPage: 20 });
+    const runs = await service.listAgentRuns({ page: 1, perPage: 20, status: 'succeeded' });
 
     expect(cards.data[0]).toMatchObject({ name: '目标澄清', category: '目标' });
     expect(runs.data[0]).toMatchObject({ modelName: 'llama3.2', inputTokens: 10 });
+    expect(runFindAndCount).toHaveBeenCalledWith(expect.objectContaining({ where: { status: 'succeeded' } }));
     expect(JSON.stringify(runs.data[0])).not.toContain('private');
     expect(JSON.stringify(runs.data[0])).not.toContain('secret');
   });

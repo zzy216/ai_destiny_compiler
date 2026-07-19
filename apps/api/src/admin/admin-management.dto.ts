@@ -11,7 +11,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 
 import { PageMetaDto } from '../common/api-contract.dto';
 
@@ -19,6 +19,14 @@ export enum AdminContentStatus {
   Draft = 'draft',
   Published = 'published',
   Disabled = 'disabled',
+}
+
+export enum AdminAgentRunStatus {
+  Running = 'running',
+  Succeeded = 'succeeded',
+  Failed = 'failed',
+  Timeout = 'timeout',
+  Cancelled = 'cancelled',
 }
 
 export class AdminPaginationQueryDto {
@@ -47,6 +55,13 @@ export class AdminPaginationQueryDto {
   @IsString()
   @MaxLength(50)
   declare category?: string;
+}
+
+export class AdminAgentRunQueryDto extends OmitType(AdminPaginationQueryDto, ['status', 'category'] as const) {
+  @ApiPropertyOptional({ enum: AdminAgentRunStatus })
+  @IsOptional()
+  @IsEnum(AdminAgentRunStatus)
+  declare status?: AdminAgentRunStatus;
 }
 
 export class CreateCoachConfigRequestDto {
